@@ -154,6 +154,12 @@
         "title": "2. Sezon 1. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep1/index.m3u8",
         "subtitles": []
+      },
+      {
+        "id": "s2-ep2",
+        "title": "2. Sezon 2. Bölüm",
+        "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep2/index.m3u8",
+        "subtitles": []
       }
     ]
   }
