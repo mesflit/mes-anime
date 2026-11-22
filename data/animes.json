@@ -28,6 +28,18 @@
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep2/en.vtt"
           }
         ]
+      },
+      {
+        "id": "s1-ep3",
+        "title": "1. Sezon 3. Bölüm",
+        "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep3/index.m3u8",
+        "subtitles": [
+          {
+            "lang": "en",
+            "label": "İngilizce",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep3/en.vtt"
+          }
+        ]
       }
     ]
   }
