@@ -134,7 +134,7 @@
       eps.forEach((ep, idx) => {
         const btn = document.createElement("button");
         btn.className = "ep-btn" + (idx === 0 ? " active" : "");
-        btn.textContent = `Bölüm ${ep.episode}`;
+        btn.textContent = ep.title || `Bölüm ${ep.episode}`;
         btn.onclick = () => {
           document.querySelectorAll(".ep-btn").forEach(b => b.classList.remove("active"));
           btn.classList.add("active");
