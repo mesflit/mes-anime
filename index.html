@@ -3,156 +3,246 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MesAnime</title>
+  <title>mes-anime</title>
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
   <style>
-    :root { --bg: #0f1117; --card: #1a1d27; --accent: #7c3aed; --text: #f3f4f6; --muted: #9ca3af; }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 20px; max-width: 1200px; margin: auto; }
-    header { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    input[type="search"] { padding: 10px 14px; border-radius: 8px; border: 1px solid #2e3345; background: var(--card); color: #fff; width: 260px; }
-    .categories { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-    .cat-btn { padding: 6px 14px; border-radius: 20px; border: none; background: var(--card); color: var(--muted); cursor: pointer; }
-    .cat-btn.active { background: var(--accent); color: #fff; }
+    :root {
+      --bg: #0b0d12; --card: #151923; --border: #232938;
+      --text: #eef1f7; --muted: #8b95a7; --accent: #e50914;
+      --plyr-color-main: #e50914;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+    header {
+      position: sticky; top: 0; z-index: 20; background: rgba(11,13,18,.92);
+      backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+      padding: 14px 20px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    }
+    .logo { font-size: 1.3rem; font-weight: 800; letter-spacing: -.5px; cursor: pointer; }
+    .logo span { color: var(--accent); }
+    .search {
+      flex: 1; min-width: 180px; max-width: 380px; margin-left: auto;
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 14px; border-radius: 8px; outline: none; font-size: .95rem;
+    }
+    .search:focus { border-color: var(--accent); }
+    main { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; }
-    .card { background: var(--card); border-radius: 10px; overflow: hidden; cursor: pointer; transition: transform 0.15s; }
-    .card:hover { transform: translateY(-4px); }
-    .card img { width: 100%; height: 250px; object-fit: cover; background: #222; }
-    .card-body { padding: 10px; }
-    .card-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-meta { font-size: 0.8rem; color: var(--muted); }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; padding: 20px; z-index: 100; }
-    .modal.open { display: flex; }
-    .modal-content { background: var(--card); width: 100%; max-width: 900px; border-radius: 12px; padding: 20px; max-height: 90vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .close-btn { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
-    video { width: 100%; aspect-ratio: 16/9; border-radius: 8px; background: #000; margin-bottom: 8px; }
-    #m-status { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; }
-    .ep-list { display: flex; flex-wrap: wrap; gap: 8px; }
-    .ep-btn { padding: 8px 14px; border-radius: 6px; border: 1px solid #2e3345; background: #11131a; color: #fff; cursor: pointer; }
-    .ep-btn.active { background: var(--accent); border-color: var(--accent); }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; cursor: pointer; transition: transform .18s, border-color .18s;
+    }
+    .card:hover { transform: translateY(-4px); border-color: var(--accent); }
+    .poster {
+      aspect-ratio: 2/3; background: linear-gradient(135deg, #1f2638, #11141d);
+      background-size: cover; background-position: center; position: relative;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--muted);
+    }
+    .badge {
+      position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.78);
+      padding: 3px 8px; border-radius: 6px; font-size: .75rem; color: #fff;
+    }
+    .card-body { padding: 12px; }
+    .card-title { font-weight: 700; font-size: .98rem; margin-bottom: 4px; }
+    .card-meta { font-size: .8rem; color: var(--muted); }
+    /* Watch View */
+    .watch-wrap { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
+    @media (max-width: 860px) { .watch-wrap { grid-template-columns: 1fr; } }
+    .player-box { background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+    .watch-bar {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      margin-top: 14px; flex-wrap: wrap;
+    }
+    .btn {
+      background: var(--card); color: var(--text); border: 1px solid var(--border);
+      padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: .9rem; font-weight: 600;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .ep-panel {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px; max-height: 540px; overflow-y: auto;
+    }
+    .ep-panel h3 { font-size: .95rem; margin-bottom: 10px; color: var(--muted); }
+    .ep-item {
+      width: 100%; text-align: left; background: transparent; color: var(--text);
+      border: 1px solid transparent; padding: 10px 12px; border-radius: 8px;
+      cursor: pointer; margin-bottom: 6px; font-size: .9rem; display: block;
+    }
+    .ep-item:hover { background: #1d2332; }
+    .ep-item.active { background: rgba(229,9,20,.15); border-color: var(--accent); font-weight: 700; }
+    .hidden { display: none !important; }
+    .empty { text-align: center; color: var(--muted); padding: 60px 20px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>MesAnime</h1>
-    <input type="search" id="search" placeholder="Anime ara..." />
+    <div class="logo" onclick="showHome()">mes<span>-anime</span></div>
+    <input id="search" class="search" type="search" placeholder="Anime ara..." oninput="renderHome()" />
   </header>
-  <div class="categories" id="categories"></div>
-  <div class="grid" id="grid"></div>
-  <div class="modal" id="modal">
-    <div class="modal-content">
-      <div class="modal-header"><h2 id="m-title"></h2><button class="close-btn" id="m-close">&times;</button></div>
-      <video id="m-player" controls playsinline></video>
-      <div id="m-status"></div>
-      <div class="ep-list" id="m-episodes"></div>
-    </div>
-  </div>
-  <script>
-    const AES_KEY_HEX = "__VIDEO_SECRET_KEY__";
-    const AES_IV_HEX  = "abcdef9876543210abcdef9876543210";
-    let animeData = {}, activeCategory = "Tümü", currentBlobUrl = null;
 
-    function hexToBytes(hex) {
-      return new Uint8Array(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+  <main>
+    <section id="homeView">
+      <div id="animeGrid" class="grid"></div>
+      <div id="emptyState" class="empty hidden">Henüz anime eklenmemiş.</div>
+    </section>
+
+    <section id="watchView" class="hidden">
+      <div style="margin-bottom: 14px;">
+        <button class="btn" onclick="showHome()">← Geri Dön</button>
+      </div>
+      <div class="watch-wrap">
+        <div>
+          <div class="player-box">
+            <video id="video" playsinline controls crossorigin="anonymous"></video>
+          </div>
+          <div class="watch-bar">
+            <div>
+              <h2 id="watchTitle" style="font-size:1.15rem;"></h2>
+              <div id="watchSub" style="font-size:.85rem;color:var(--muted);margin-top:2px;"></div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button id="prevBtn" class="btn">← Önceki</button>
+              <button id="nextBtn" class="btn btn-accent">Sonraki →</button>
+            </div>
+          </div>
+        </div>
+        <aside class="ep-panel">
+          <h3>Bölümler</h3>
+          <div id="epList"></div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  <script>
+    const SECRET_KEY = "__VIDEO_SECRET_KEY__";
+    let AES_KEY_BUF = null;
+    let ANIMES = [];
+    let hls = null;
+    let player = null;
+
+    async function initKey() {
+      const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(SECRET_KEY));
+      AES_KEY_BUF = hash.slice(0, 16);
     }
 
-    async function playEncryptedEpisode(parts) {
-      const player = document.getElementById("m-player");
-      const status = document.getElementById("m-status");
-      if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
-      player.src = "";
-
-      try {
-        const key = await crypto.subtle.importKey(
-          "raw", hexToBytes(AES_KEY_HEX), { name: "AES-CBC" }, false, ["decrypt"]
-        );
-        const iv = hexToBytes(AES_IV_HEX);
-        const chunks = [];
-
-        for (let i = 0; i < parts.length; i++) {
-          status.textContent = `Parça indiriliyor ve çözülüyor... (${i + 1}/${parts.length})`;
-          const res = await fetch(parts[i]);
-          if (!res.ok) throw new Error("Parça indirilemedi: " + parts[i]);
-          const encBuf = await res.arrayBuffer();
-          const decBuf = await crypto.subtle.decrypt({ name: "AES-CBC", iv }, key, encBuf);
-          chunks.push(decBuf);
+    // HLS.js özel yükleyici: "enc.key" isteğini ağa çıkmadan bellekten verir
+    class KeyInterceptLoader extends Hls.DefaultConfig.loader {
+      load(context, config, callbacks) {
+        if (context.url && context.url.endsWith("enc.key")) {
+          const stats = { trequest: performance.now(), tfirst: performance.now(), tload: performance.now(), loaded: 16, total: 16 };
+          setTimeout(() => callbacks.onSuccess({ url: context.url, data: AES_KEY_BUF }, stats, context, null), 0);
+          return;
         }
-
-        const blob = new Blob(chunks, { type: "video/mp4" });
-        currentBlobUrl = URL.createObjectURL(blob);
-        player.src = currentBlobUrl;
-        status.textContent = "Hazır!";
-        player.play().catch(() => {});
-      } catch (err) {
-        status.textContent = "Hata: " + err.message;
+        super.load(context, config, callbacks);
       }
     }
 
-    async function init() {
-      const res = await fetch("data/animes.json");
-      animeData = await res.json();
-      renderCategories(); renderGrid();
+    async function boot() {
+      await initKey();
+      try {
+        const res = await fetch("data/animes.json?t=" + Date.now());
+        ANIMES = await res.json();
+      } catch { ANIMES = []; }
+      renderHome();
     }
 
-    function renderCategories() {
-      const cats = new Set(["Tümü"]);
-      Object.values(animeData).forEach(a => (a.categories || []).forEach(c => cats.add(c)));
-      const container = document.getElementById("categories");
-      container.innerHTML = "";
-      cats.forEach(cat => {
-        const btn = document.createElement("button");
-        btn.className = "cat-btn" + (cat === activeCategory ? " active" : "");
-        btn.textContent = cat;
-        btn.onclick = () => { activeCategory = cat; renderCategories(); renderGrid(); };
-        container.appendChild(btn);
-      });
+    function showHome() {
+      if (hls) { hls.destroy(); hls = null; }
+      document.getElementById("watchView").classList.add("hidden");
+      document.getElementById("homeView").classList.remove("hidden");
     }
 
-    function renderGrid() {
-      const q = document.getElementById("search").value.toLowerCase();
-      const grid = document.getElementById("grid");
+    function renderHome() {
+      const q = document.getElementById("search").value.toLowerCase().trim();
+      const list = ANIMES.filter(a => a.title.toLowerCase().includes(q) || (a.category || "").toLowerCase().includes(q));
+      const grid = document.getElementById("animeGrid");
+      const empty = document.getElementById("emptyState");
       grid.innerHTML = "";
-      const entries = Object.entries(animeData).filter(([key, a]) =>
-        (activeCategory === "Tümü" || (a.categories || []).includes(activeCategory)) &&
-        (key.toLowerCase().includes(q) || (a.romaji_title || "").toLowerCase().includes(q))
-      );
-      if (!entries.length) { grid.innerHTML = "<p style='color:#9ca3af'>Henüz bölüm yok.</p>"; return; }
-      entries.forEach(([key, a]) => {
+      empty.classList.toggle("hidden", list.length > 0);
+
+      list.forEach(anime => {
         const card = document.createElement("div");
         card.className = "card";
-        card.innerHTML = `<img src="${a.cover || ''}" /><div class="card-body"><div class="card-title">${a.romaji_title || key}</div><div class="card-meta">${a.year || ""} • ${Object.keys(a.episodes || {}).length} Bölüm</div></div>`;
-        card.onclick = () => openModal(a);
+        card.onclick = () => openAnime(anime, 0);
+        const bgStyle = anime.poster ? `style="background-image:url('${anime.poster}')"` : "";
+        card.innerHTML = `
+          <div class="poster" ${bgStyle}>
+            ${anime.poster ? "" : anime.title}
+            <span class="badge">${anime.episodes.length} Bölüm</span>
+          </div>
+          <div class="card-body">
+            <div class="card-title">${anime.title}</div>
+            <div class="card-meta">${anime.category || "Anime"}</div>
+          </div>`;
         grid.appendChild(card);
       });
     }
 
-    function openModal(anime) {
-      document.getElementById("m-title").textContent = anime.romaji_title;
-      const epList = document.getElementById("m-episodes");
+    function openAnime(anime, epIndex) {
+      document.getElementById("homeView").classList.add("hidden");
+      document.getElementById("watchView").classList.remove("hidden");
+
+      const ep = anime.episodes[epIndex];
+      document.getElementById("watchTitle").textContent = `${anime.title} — ${ep.title}`;
+      document.getElementById("watchSub").textContent = anime.category || "";
+
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      prevBtn.disabled = epIndex <= 0;
+      nextBtn.disabled = epIndex >= anime.episodes.length - 1;
+      prevBtn.onclick = () => openAnime(anime, epIndex - 1);
+      nextBtn.onclick = () => openAnime(anime, epIndex + 1);
+
+      const epList = document.getElementById("epList");
       epList.innerHTML = "";
-      const eps = Object.values(anime.episodes || {}).sort((a, b) => a.episode - b.episode);
-      eps.forEach((ep, idx) => {
-        const btn = document.createElement("button");
-        btn.className = "ep-btn" + (idx === 0 ? " active" : "");
-        btn.textContent = ep.title || `Bölüm ${ep.episode}`;
-        btn.onclick = () => {
-          document.querySelectorAll(".ep-btn").forEach(b => b.classList.remove("active"));
-          btn.classList.add("active");
-          playEncryptedEpisode(ep.parts);
-        };
-        epList.appendChild(btn);
+      anime.episodes.forEach((e, i) => {
+        const b = document.createElement("button");
+        b.className = "ep-item" + (i === epIndex ? " active" : "");
+        b.textContent = e.title;
+        b.onclick = () => openAnime(anime, i);
+        epList.appendChild(b);
       });
-      if (eps.length) playEncryptedEpisode(eps[0].parts);
-      document.getElementById("modal").classList.add("open");
+
+      loadVideo(ep);
     }
 
-    document.getElementById("m-close").onclick = () => {
-      document.getElementById("modal").classList.remove("open");
-      const player = document.getElementById("m-player");
-      player.pause(); player.src = "";
-    };
-    document.getElementById("search").addEventListener("input", renderGrid);
-    init();
+    function loadVideo(ep) {
+      if (hls) { hls.destroy(); hls = null; }
+      if (player) { player.destroy(); player = null; }
+
+      const box = document.querySelector(".player-box");
+      box.innerHTML = `<video id="video" playsinline controls crossorigin="anonymous"></video>`;
+      const video = document.getElementById("video");
+
+      (ep.subtitles || []).forEach((s, idx) => {
+        const track = document.createElement("track");
+        track.kind = "captions";
+        track.label = s.label;
+        track.srclang = s.lang;
+        track.src = s.src;
+        if (idx === 0) track.default = true;
+        video.appendChild(track);
+      });
+
+      if (Hls.isSupported()) {
+        hls = new Hls({ loader: KeyInterceptLoader });
+        hls.loadSource(ep.m3u8);
+        hls.attachMedia(video);
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = ep.m3u8;
+      }
+
+      player = new Plyr(video, {
+        captions: { active: true, update: true, language: "auto" },
+        controls: ["play-large", "play", "progress", "current-time", "mute", "volume", "captions", "settings", "pip", "fullscreen"]
+      });
+    }
+
+    boot();
   </script>
 </body>
 </html>
