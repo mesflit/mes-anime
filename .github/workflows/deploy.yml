@@ -2,7 +2,7 @@ name: Şifreli Siteyi Yayınla
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "master"]
   workflow_dispatch:
 
 permissions:

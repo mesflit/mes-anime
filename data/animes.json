@@ -3,7 +3,7 @@
     "id": "opm",
     "title": "One Punch Man",
     "category": "Aksiyon",
-    "poster": "",
+    "poster": "data/opm.jpg",
     "episodes": [
       {
         "id": "s1-ep1",
