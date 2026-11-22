@@ -64,6 +64,18 @@
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep5/en.vtt"
           }
         ]
+      },
+      {
+        "id": "s1-ep6",
+        "title": "1. Sezon 6. Bölüm",
+        "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep6/index.m3u8",
+        "subtitles": [
+          {
+            "lang": "en",
+            "label": "İngilizce",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep6/en.vtt"
+          }
+        ]
       }
     ]
   }
