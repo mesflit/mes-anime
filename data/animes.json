@@ -76,6 +76,18 @@
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep6/en.vtt"
           }
         ]
+      },
+      {
+        "id": "s1-ep7",
+        "title": "1. Sezon 7. Bölüm",
+        "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep7/index.m3u8",
+        "subtitles": [
+          {
+            "lang": "en",
+            "label": "İngilizce",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep7/en.vtt"
+          }
+        ]
       }
     ]
   }
