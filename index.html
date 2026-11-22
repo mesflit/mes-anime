@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MesAnime</title>
+  <style>
+    :root { --bg: #0f1117; --card: #1a1d27; --accent: #7c3aed; --text: #f3f4f6; --muted: #9ca3af; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; max-width: 1200px; margin: auto; }
+    header { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    input[type="search"] { padding: 10px 14px; border-radius: 8px; border: 1px solid #2e3345; background: var(--card); color: #fff; width: 260px; }
+    .categories { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+    .cat-btn { padding: 6px 14px; border-radius: 20px; border: none; background: var(--card); color: var(--muted); cursor: pointer; }
+    .cat-btn.active { background: var(--accent); color: #fff; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; }
+    .card { background: var(--card); border-radius: 10px; overflow: hidden; cursor: pointer; transition: transform 0.15s; }
+    .card:hover { transform: translateY(-4px); }
+    .card img { width: 100%; height: 250px; object-fit: cover; background: #222; }
+    .card-body { padding: 10px; }
+    .card-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-meta { font-size: 0.8rem; color: var(--muted); }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; padding: 20px; z-index: 100; }
+    .modal.open { display: flex; }
+    .modal-content { background: var(--card); width: 100%; max-width: 900px; border-radius: 12px; padding: 20px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .close-btn { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    iframe { width: 100%; aspect-ratio: 16/9; border: none; border-radius: 8px; background: #000; margin-bottom: 14px; }
+    .ep-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ep-btn { padding: 8px 14px; border-radius: 6px; border: 1px solid #2e3345; background: #11131a; color: #fff; cursor: pointer; }
+    .ep-btn.active { background: var(--accent); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MesAnime</h1>
+    <input type="search" id="search" placeholder="Anime ara..." />
+  </header>
+  <div class="categories" id="categories"></div>
+  <div class="grid" id="grid"></div>
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <div class="modal-header"><h2 id="m-title"></h2><button class="close-btn" id="m-close">&times;</button></div>
+      <iframe id="m-player" allowfullscreen></iframe>
+      <div class="ep-list" id="m-episodes"></div>
+    </div>
+  </div>
+  <script>
+    let animeData = {}, activeCategory = "Tümü";
+    async function init() {
+      const res = await fetch("data/animes.json");
+      animeData = await res.json();
+      renderCategories(); renderGrid();
+    }
+    function renderCategories() {
+      const cats = new Set(["Tümü"]);
+      Object.values(animeData).forEach(a => (a.categories || []).forEach(c => cats.add(c)));
+      const container = document.getElementById("categories");
+      container.innerHTML = "";
+      cats.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.className = "cat-btn" + (cat === activeCategory ? " active" : "");
+        btn.textContent = cat;
+        btn.onclick = () => { activeCategory = cat; renderCategories(); renderGrid(); };
+        container.appendChild(btn);
+      });
+    }
+    function renderGrid() {
+      const q = document.getElementById("search").value.toLowerCase();
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
+      const entries = Object.entries(animeData).filter(([key, a]) =>
+        (activeCategory === "Tümü" || (a.categories || []).includes(activeCategory)) &&
+        (key.toLowerCase().includes(q) || (a.romaji_title || "").toLowerCase().includes(q))
+      );
+      if (!entries.length) { grid.innerHTML = "<p style='color:#9ca3af'>Henüz bölüm yok.</p>"; return; }
+      entries.forEach(([key, a]) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `<img src="${a.cover || ''}" /><div class="card-body"><div class="card-title">${a.romaji_title || key}</div><div class="card-meta">${a.year || ""} • ${Object.keys(a.episodes || {}).length} Bölüm</div></div>`;
+        card.onclick = () => openModal(a);
+        grid.appendChild(card);
+      });
+    }
+    function openModal(anime) {
+      document.getElementById("m-title").textContent = anime.romaji_title;
+      const epList = document.getElementById("m-episodes"), player = document.getElementById("m-player");
+      epList.innerHTML = "";
+      const eps = Object.values(anime.episodes || {}).sort((a, b) => a.episode - b.episode);
+      eps.forEach((ep, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "ep-btn" + (idx === 0 ? " active" : "");
+        btn.textContent = `Bölüm ${ep.episode}`;
+        btn.onclick = () => {
+          document.querySelectorAll(".ep-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active"); player.src = ep.embed_url;
+        };
+        epList.appendChild(btn);
+      });
+      player.src = eps.length ? eps[0].embed_url : "";
+      document.getElementById("modal").classList.add("open");
+    }
+    document.getElementById("m-close").onclick = () => { document.getElementById("modal").classList.remove("open"); document.getElementById("m-player").src = ""; };
+    document.getElementById("search").addEventListener("input", renderGrid);
+    init();
+  </script>
+</body>
+</html>
