@@ -4,23 +4,23 @@ import json
 import subprocess
 import re
 
+GITHUB_USER = "mesflit"
 AES_KEY = os.getenv("VIDEO_SECRET_KEY", "")
 AES_IV  = "abcdef9876543210abcdef9876543210"
 CHUNK_SIZE = 20 * 1024 * 1024  # 20 MB
 DB_PATH = "data/animes.json"
 
-def pack_video(mp4_path, out_dir, ep_title, anime_title=None, category="Aksiyon"):
+def pack_video(mp4_path, repo_name, sub_dir, ep_title, category="Aksiyon"):
     if len(AES_KEY) != 64:
         print("[!] Hata: VIDEO_SECRET_KEY tanımlı değil!")
         sys.exit(1)
 
-    # Başındaki / işaretini kaldır (repo içine yazması için)
-    out_dir = out_dir.lstrip("/")
+    sub_dir = sub_dir.strip("/")
+    repo_root = os.path.abspath(os.path.join("..", repo_name))
+    out_dir = os.path.join(repo_root, sub_dir)
     os.makedirs(out_dir, exist_ok=True)
 
-    # Anime adı verilmediyse "OnePunchMan S1 B1" -> "OnePunchMan" olarak ayıkla
-    if not anime_title:
-        anime_title = re.sub(r"\s+(S\d+|B\d+|E\d+|Bölüm).*", "", ep_title, flags=re.IGNORECASE).strip() or ep_title
+    anime_title = re.sub(r"\s+(S\d+|B\d+|E\d+|Bölüm).*", "", ep_title, flags=re.IGNORECASE).strip() or ep_title
 
     parts = []
     idx = 0
@@ -29,8 +29,9 @@ def pack_video(mp4_path, out_dir, ep_title, anime_title=None, category="Aksiyon"
             chunk = f.read(CHUNK_SIZE)
             if not chunk:
                 break
-            raw_path = f"{out_dir}/part_{idx:03d}.tmp"
-            enc_path = f"{out_dir}/part_{idx:03d}.enc"
+            raw_path = os.path.join(out_dir, f"part_{idx:03d}.tmp")
+            enc_name = f"part_{idx:03d}.enc"
+            enc_path = os.path.join(out_dir, enc_name)
 
             with open(raw_path, "wb") as cf:
                 cf.write(chunk)
@@ -42,8 +43,9 @@ def pack_video(mp4_path, out_dir, ep_title, anime_title=None, category="Aksiyon"
             ], check=True)
 
             os.remove(raw_path)
-            parts.append(enc_path)
-            print(f"[+] Şifrelendi: {enc_path}")
+            raw_url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{repo_name}/main/{sub_dir}/{enc_name}"
+            parts.append(raw_url)
+            print(f"[+] Şifrelendi: {repo_name}/{sub_dir}/{enc_name}")
             idx += 1
 
     os.makedirs("data", exist_ok=True)
@@ -58,7 +60,6 @@ def pack_video(mp4_path, out_dir, ep_title, anime_title=None, category="Aksiyon"
             "episodes": {}
         }
 
-    # Sıralama için bölüm numarasını çek (yoksa sıradaki sayıyı ver)
     ep_match = re.search(r"(?:B|E|Bölüm\s*)(\d+)", ep_title, flags=re.IGNORECASE)
     ep_num = int(ep_match.group(1)) if ep_match else len(db[anime_title]["episodes"]) + 1
 
@@ -71,11 +72,13 @@ def pack_video(mp4_path, out_dir, ep_title, anime_title=None, category="Aksiyon"
     with open(DB_PATH, "w", encoding="utf-8") as f:
         json.dump(db, f, ensure_ascii=False, indent=2)
 
-    print(f"[✓] Tamamlandı! '{anime_title}' altına '{ep_title}' ({len(parts)} parça) eklendi.")
+    print(f"\n[✓] Tamamlandı! {len(parts)} parça -> {repo_root}")
+    print(f"[✓] Linkler data/animes.json dosyasına işlendi.")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        print('Kullanım: python3 scripts/pack.py <video.mp4> "/videos/opm/season1/bolum1" "OnePunchMan S1 B1" [Kategori]')
+    if len(sys.argv) < 5:
+        print('Kullanım: python3 scripts/pack.py <video.mp4> <repo_adi> <alt_klasor> "<Bölüm Başlığı>" [Kategori]')
+        print('Örnek:    python3 scripts/pack.py bolum1.mp4 opm-s1 "ep1" "OnePunchMan S1 B1" "Aksiyon"')
         sys.exit(1)
-    cat = sys.argv[4] if len(sys.argv) > 4 else "Aksiyon"
-    pack_video(sys.argv[1], sys.argv[2], sys.argv[3], category=cat)
+    cat = sys.argv[5] if len(sys.argv) > 5 else "Aksiyon"
+    pack_video(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], cat)
