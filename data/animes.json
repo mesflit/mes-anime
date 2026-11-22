@@ -1,33 +1,22 @@
-{
-  "OnePunchMan": {
-    "romaji_title": "OnePunchMan",
-    "categories": [
-      "Aksiyon"
-    ],
-    "year": 2026,
-    "cover": "",
-    "episodes": {
-      "OnePunchMan S1 B1": {
-        "episode": 1,
-        "title": "OnePunchMan S1 B1",
-        "parts": [
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_000.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_001.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_002.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_003.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_004.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_005.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_006.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_007.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_008.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_009.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_010.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_011.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_012.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_013.enc",
-          "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/part_014.enc"
+[
+  {
+    "id": "opm",
+    "title": "One Punch Man",
+    "category": "Aksiyon",
+    "poster": "",
+    "episodes": [
+      {
+        "id": "s1-ep1",
+        "title": "1. Sezon 1. Bölüm",
+        "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/index.m3u8",
+        "subtitles": [
+          {
+            "lang": "en",
+            "label": "İngilizce",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/en.vtt"
+          }
         ]
       }
-    }
+    ]
   }
-}
+]

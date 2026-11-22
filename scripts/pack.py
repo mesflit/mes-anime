@@ -28,7 +28,7 @@ def pack_hls(args):
         audio_map = f"0:a:m:language:{args.lang}" if args.lang != "0" else "0:a:0"
         ffmpeg_cmd = [
             "ffmpeg", "-y", "-i", args.input,
-            "-map", "0:v:0", "-map", f"{audio_map}?",
+            "-map", "0:v:0", "-map", f"{audio_map}",
             "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "24", "-preset", args.preset,
             "-c:a", "aac", "-b:a", "128k",
             "-hls_time", "6",
