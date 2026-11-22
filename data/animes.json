@@ -148,6 +148,12 @@
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep12/en.vtt"
           }
         ]
+      },
+      {
+        "id": "s2-ep1",
+        "title": "2. Sezon 1. Bölüm",
+        "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep1/index.m3u8",
+        "subtitles": []
       }
     ]
   }
