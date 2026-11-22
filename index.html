@@ -25,7 +25,8 @@
     .modal-content { background: var(--card); width: 100%; max-width: 900px; border-radius: 12px; padding: 20px; max-height: 90vh; overflow-y: auto; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .close-btn { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
-    iframe { width: 100%; aspect-ratio: 16/9; border: none; border-radius: 8px; background: #000; margin-bottom: 14px; }
+    video { width: 100%; aspect-ratio: 16/9; border-radius: 8px; background: #000; margin-bottom: 8px; }
+    #m-status { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; }
     .ep-list { display: flex; flex-wrap: wrap; gap: 8px; }
     .ep-btn { padding: 8px 14px; border-radius: 6px; border: 1px solid #2e3345; background: #11131a; color: #fff; cursor: pointer; }
     .ep-btn.active { background: var(--accent); border-color: var(--accent); }
@@ -41,17 +42,58 @@
   <div class="modal" id="modal">
     <div class="modal-content">
       <div class="modal-header"><h2 id="m-title"></h2><button class="close-btn" id="m-close">&times;</button></div>
-      <iframe id="m-player" allowfullscreen></iframe>
+      <video id="m-player" controls playsinline></video>
+      <div id="m-status"></div>
       <div class="ep-list" id="m-episodes"></div>
     </div>
   </div>
   <script>
-    let animeData = {}, activeCategory = "Tümü";
+    const AES_KEY_HEX = "__VIDEO_SECRET_KEY__";
+    const AES_IV_HEX  = "abcdef9876543210abcdef9876543210";
+    let animeData = {}, activeCategory = "Tümü", currentBlobUrl = null;
+
+    function hexToBytes(hex) {
+      return new Uint8Array(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+    }
+
+    async function playEncryptedEpisode(parts) {
+      const player = document.getElementById("m-player");
+      const status = document.getElementById("m-status");
+      if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+      player.src = "";
+
+      try {
+        const key = await crypto.subtle.importKey(
+          "raw", hexToBytes(AES_KEY_HEX), { name: "AES-CBC" }, false, ["decrypt"]
+        );
+        const iv = hexToBytes(AES_IV_HEX);
+        const chunks = [];
+
+        for (let i = 0; i < parts.length; i++) {
+          status.textContent = `Parça indiriliyor ve çözülüyor... (${i + 1}/${parts.length})`;
+          const res = await fetch(parts[i]);
+          if (!res.ok) throw new Error("Parça indirilemedi: " + parts[i]);
+          const encBuf = await res.arrayBuffer();
+          const decBuf = await crypto.subtle.decrypt({ name: "AES-CBC", iv }, key, encBuf);
+          chunks.push(decBuf);
+        }
+
+        const blob = new Blob(chunks, { type: "video/mp4" });
+        currentBlobUrl = URL.createObjectURL(blob);
+        player.src = currentBlobUrl;
+        status.textContent = "Hazır!";
+        player.play().catch(() => {});
+      } catch (err) {
+        status.textContent = "Hata: " + err.message;
+      }
+    }
+
     async function init() {
       const res = await fetch("data/animes.json");
       animeData = await res.json();
       renderCategories(); renderGrid();
     }
+
     function renderCategories() {
       const cats = new Set(["Tümü"]);
       Object.values(animeData).forEach(a => (a.categories || []).forEach(c => cats.add(c)));
@@ -65,6 +107,7 @@
         container.appendChild(btn);
       });
     }
+
     function renderGrid() {
       const q = document.getElementById("search").value.toLowerCase();
       const grid = document.getElementById("grid");
@@ -82,9 +125,10 @@
         grid.appendChild(card);
       });
     }
+
     function openModal(anime) {
       document.getElementById("m-title").textContent = anime.romaji_title;
-      const epList = document.getElementById("m-episodes"), player = document.getElementById("m-player");
+      const epList = document.getElementById("m-episodes");
       epList.innerHTML = "";
       const eps = Object.values(anime.episodes || {}).sort((a, b) => a.episode - b.episode);
       eps.forEach((ep, idx) => {
@@ -93,14 +137,20 @@
         btn.textContent = `Bölüm ${ep.episode}`;
         btn.onclick = () => {
           document.querySelectorAll(".ep-btn").forEach(b => b.classList.remove("active"));
-          btn.classList.add("active"); player.src = ep.embed_url;
+          btn.classList.add("active");
+          playEncryptedEpisode(ep.parts);
         };
         epList.appendChild(btn);
       });
-      player.src = eps.length ? eps[0].embed_url : "";
+      if (eps.length) playEncryptedEpisode(eps[0].parts);
       document.getElementById("modal").classList.add("open");
     }
-    document.getElementById("m-close").onclick = () => { document.getElementById("modal").classList.remove("open"); document.getElementById("m-player").src = ""; };
+
+    document.getElementById("m-close").onclick = () => {
+      document.getElementById("modal").classList.remove("open");
+      const player = document.getElementById("m-player");
+      player.pause(); player.src = "";
+    };
     document.getElementById("search").addEventListener("input", renderGrid);
     init();
   </script>
