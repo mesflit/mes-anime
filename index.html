@@ -27,14 +27,14 @@
     }
     .search:focus { border-color: var(--accent); }
     main { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 12px; } @media (max-width: 600px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
     .card {
       background: var(--card); border: 1px solid var(--border); border-radius: 12px;
       overflow: hidden; cursor: pointer; transition: transform .18s, border-color .18s;
     }
     .card:hover { transform: translateY(-4px); border-color: var(--accent); }
     .poster {
-      aspect-ratio: 2/3; background: linear-gradient(135deg, #1f2638, #11141d);
+      aspect-ratio: 3/4; background: linear-gradient(135deg, #1f2638, #11141d);
       background-size: cover; background-position: center; position: relative;
       display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--muted);
     }
@@ -42,8 +42,8 @@
       position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.78);
       padding: 3px 8px; border-radius: 6px; font-size: .75rem; color: #fff;
     }
-    .card-body { padding: 12px; }
-    .card-title { font-weight: 700; font-size: .98rem; margin-bottom: 4px; }
+    .card-body { padding: 8px 10px; }
+    .card-title { font-weight: 700; font-size: .88rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-meta { font-size: .8rem; color: var(--muted); }
     /* Watch View */
     .watch-wrap { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
