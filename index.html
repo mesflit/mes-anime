@@ -200,7 +200,6 @@
     }
 
     /* ---------- anime listesi: data/depolar.txt -> her deponun mes.anime dosyası ---------- */
-    const LANG_NAMES = { tr: "Türkçe", en: "İngilizce", jp: "Japonca", ja: "Japonca" };
 
     // "mesflit/opm" veya "mesflit/opm@dal" -> mes.anime'yi okuyup sitenin kullandığı biçime çevirir
     async function loadRepo(line) {
@@ -222,7 +221,7 @@
             title: e.title || e.path,
             m3u8: `${dir}/index.m3u8`,
             subtitles: (e.subtitles || []).map(s => typeof s === "string"
-              ? { lang: s, label: LANG_NAMES[s] || s.toUpperCase(), src: `${dir}/${s}.vtt` }
+              ? { lang: s, label: LANG_LABELS[s] || s.toUpperCase(), src: `${dir}/${s}.vtt` }
               : { ...s, src: url(s.src) })
           };
         })
