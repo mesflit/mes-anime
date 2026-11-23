@@ -104,6 +104,10 @@
       text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
                    0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 0 3px 6px rgba(0,0,0,.8);
     }
+    video::cue {
+      background: transparent; color: #fff; font-weight: 700;
+      text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 3px 6px rgba(0,0,0,.8);
+    }
     .plyr--fullscreen-active .plyr__captions .plyr__caption { font-size: clamp(20px, 3vw, 44px); }
   </style>
 </head>
@@ -362,7 +366,7 @@
     // bunu <track> olarak reddeder. Dosyayı çekip text/vtt Blob'u olarak veriyoruz.
     async function subtitleUrl(src) {
       try {
-        const r = await fetch(src);
+        const r = await fetch(src, { cache: "no-cache" });
         if (!r.ok) throw 0;
         const u = URL.createObjectURL(new Blob([await r.text()], { type: "text/vtt" }));
         blobUrls.push(u);
@@ -400,7 +404,6 @@
         track.label = s.label || LANG_LABELS[s.lang] || s.lang;
         track.srclang = s.lang;
         track.src = urls[i];
-        if (s === chosen && pref !== "off") track.default = true;
         video.appendChild(track);
       });
 
@@ -452,6 +455,21 @@
         lastSave = t;
         store.set(progKey(anime, ep), { t, d, at: Date.now() });
       });
+      // Aynı anda yalnızca seçili altyazı açık olsun. Telefonların yerel tam ekranında
+      // (iOS) tarayıcı altyazıyı kendisi çizer; orada "showing", Plyr'da "hidden" gerekir.
+      const nativeFs = () => !!(document.webkitFullscreenElement === video || video.webkitDisplayingFullscreen);
+      const syncTracks = () => {
+        const on = player.currentTrack >= 0 && player.captions && player.captions.active !== false && store.get("subLang", "tr") !== "off";
+        const lang = player.language;
+        [...video.textTracks].forEach(t => {
+          const want = on && t.language === lang ? (nativeFs() ? "showing" : "hidden") : "disabled";
+          if (t.mode !== want) t.mode = want;
+        });
+      };
+      ["languagechange", "captionsenabled", "captionsdisabled", "enterfullscreen", "exitfullscreen", "ready"].forEach(e => player.on(e, () => setTimeout(syncTracks, 0)));
+      video.addEventListener("webkitbeginfullscreen", () => setTimeout(syncTracks, 0));
+      video.addEventListener("webkitendfullscreen", () => setTimeout(syncTracks, 0));
+      video.textTracks.addEventListener("change", () => setTimeout(syncTracks, 0));
       player.on("languagechange", () => store.set("subLang", player.language || "tr"));
       player.on("captionsdisabled", () => store.set("subLang", "off"));
       player.on("captionsenabled", () => { if (store.get("subLang", "tr") === "off") store.set("subLang", player.language || "tr"); });
