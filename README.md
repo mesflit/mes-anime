@@ -2,12 +2,22 @@
 
 GitHub Pages üzerinde çalışan, şifreli ve parçalı (AES-128 HLS) anime izleme sitesi.
 
-- **Bu depo (`mes-anime`)**: site (`index.html`), anime depolarının listesi (`data/depolar.txt`) ve yardımcı betikler.
+- **Bu depo (`mes-anime`)**: site (`index.html`), anime depolarının listesi (`data/depolar.txt`)
+  ve yönetim aracı (`mes.py`).
 - **Video depoları (ör. `mesflit/opm`)**: bölümlerin şifreli video parçaları, altyazıları ve
   o animenin bilgilerini tutan `mes.anime` dosyası.
 
 Site açılırken `data/depolar.txt`'deki her deponun `mes.anime` dosyasını doğrudan GitHub'dan okur.
 Yeni bölüm için mes-anime'ye dokunmak gerekmez, sadece video deposuna push edilir.
+
+## Hızlı başlangıç
+
+    python3 mes.py yeni deathnote "Death Note" --kategori Gerilim --kapak kapak.jpg
+    python3 mes.py ekle deathnote /sdcard/Download/deathnote/
+
+Bu kadar. İlk komut GitHub'da depoyu açar, `mes.anime`'yi oluşturur ve siteye ekler.
+İkincisi klasördeki tüm videoları sırayla şifreler, altyazılarını hazırlar ve her bölümü
+ayrı ayrı gönderir. Birkaç dakika sonra sitede görünür.
 
 ## Özellikler
 
@@ -15,36 +25,41 @@ Yeni bölüm için mes-anime'ye dokunmak gerekmez, sadece video deposuna push ed
 - Kaldığın yerden devam et, "İzlemeye Devam Et" satırı, izlenen bölümlerde ✓ işareti
 - Sezon sekmeleri, otomatik sonraki bölüm, `Shift+N` / `Shift+P` kısayolları
 - Paylaşılabilir bölüm linkleri (`#/izle/opm/s1-ep3`), sayfa yenilenince bölüm kaybolmaz
+- **İndirme**: bölümü MP4, altyazıları SRT olarak indirme (bkz. "İndirme nasıl çalışır?")
 - Arama (anime adı ve kategoride)
 
 ## Depo yapısı
 
     mes-anime/
-    ├── index.html                 # Sitenin tamamı (HTML + CSS + JS, tek dosya)
+    ├── index.html             # Sitenin tamamı (HTML + CSS + JS, tek dosya)
+    ├── mes.py                 # Yönetim aracı: yeni / ekle / guncelle / klonla / altyazi
+    ├── araclar/               # mes.py'nin modülleri
+    │   ├── ayar.py            #   ortak ayarlar (GitHub kullanıcı adı, yollar, dil adları)
+    │   ├── video.py           #   videoyu şifreli HLS'e çevirme
+    │   ├── altyazi.py         #   altyazı çıkarma / temizleme / çeviri
+    │   ├── katalog.py         #   mes.anime okuma / yazma / güncelleme
+    │   └── depo.py            #   git: hafif klon, gönderme, yeni depo, depolar.txt
     ├── data/
-    │   ├── depolar.txt            # Sitede görünecek anime depoları (her satıra bir tane)
-    │   ├── opm.jpg                # Eski kapak (artık opm/poster.jpg kullanılıyor)
-    │   └── processed.txt          # pipeline.py'nin kaydı (kullanılmıyor)
-    ├── scripts/
-    │   ├── pack.py                # Video -> şifreli HLS + altyazı + mes.anime güncelleme
-    │   ├── mesanime.py            # Klasörleri tarayıp mes.anime oluşturur/günceller
-    │   ├── altyazi.py             # Altyazı temizleme / çeviri / kaydetme
-    │   ├── subs.py                # VTT ayrıştırma ve temizleme (altyazi.py ve pack.py kullanır)
-    │   ├── hafif_klon.sh          # Video deposunu .ts dosyaları olmadan klonlar
-    │   └── pipeline.py            # ESKİ: torrent + Doodstream hattı (kapalı, bkz. aşağı)
+    │   ├── depolar.txt        # Sitede görünecek anime depoları (her satıra bir tane)
+    │   ├── opm.jpg            # Eski kapak (artık opm/poster.jpg kullanılıyor)
+    │   └── processed.txt      # pipeline.py'nin kaydı (kullanılmıyor)
+    ├── scripts/pipeline.py    # ESKİ: torrent + Doodstream hattı (kapalı, bkz. aşağı)
     └── .github/workflows/
-        ├── deploy.yml             # master'a push -> anahtarı gömer, GitHub Pages'e yayınlar
-        └── auto_fansub.yml        # ESKİ: pipeline.py'yi çalıştırır (sadece elle)
+        ├── deploy.yml         # master'a push -> anahtarı gömer, GitHub Pages'e yayınlar
+        └── auto_fansub.yml    # ESKİ: pipeline.py'yi çalıştırır (sadece elle)
 
-Video deposu ve betikler **yan yana** durmalı: betikler video deposunu `../<depo>` olarak arar.
+Video depoları mes-anime'nin **yanında** durur (`mes.py` onları `../<depo>` olarak arar, yoksa kendisi klonlar):
 
     ~/
     ├── mes-anime/
-    └── opm/
+    ├── opm/
+    └── deathnote/
 
-## İlk Kurulum
+## İlk Kurulum (telefonda, Termux)
 
     pkg install -y git gh openssl-tool python ffmpeg
+    pip install deep-translator          # otomatik Türkçe çeviri için
+    gh auth login                        # "yeni" komutunun depo açabilmesi için
     export VIDEO_SECRET_KEY=$(openssl rand -hex 32)
     echo "export VIDEO_SECRET_KEY=$VIDEO_SECRET_KEY" >> ~/.bashrc
     gh secret set VIDEO_SECRET_KEY -b "$VIDEO_SECRET_KEY"
@@ -53,16 +68,67 @@ GitHub Pages ayarı: Settings -> Pages -> Source -> GitHub Actions
 
 > `VIDEO_SECRET_KEY` bir kere belirlenir ve **asla değiştirilmez**. Değişirse daha önce
 > şifrelenmiş tüm bölümler oynatılamaz (hepsinin yeniden kodlanması gerekir).
+> Yeni telefona geçerken eski anahtarı `~/.bashrc`'den al.
 
-## Video deposunu videolar OLMADAN klonlama
+## mes.py komutları
 
-Video deposu (opm) 8 GB'tan büyük. Yeni bölüm eklemek için tamamını indirmene gerek yok:
+Hepsi mes-anime klasöründen çalıştırılır. `python3 mes.py <komut> -h` ayrıntıları gösterir.
+Gönderme (git push) istemezsen her komuta `--gonderme` ekle.
 
-    git clone https://github.com/mesflit/mes-anime.git
-    cd mes-anime
-    bash scripts/hafif_klon.sh opm      # ../opm klasörüne sadece m3u8/vtt/mes.anime iner (~2-3 MB)
+### yeni — yeni anime
 
-Zaten tam klonun varsa aynı komut `.ts` dosyalarını diskten kaldırır.
+    python3 mes.py yeni <depo> "<Anime Adı>" [--kategori Aksiyon] [--kapak resim.jpg]
+
+1. GitHub'da `mesflit/<depo>` yoksa **herkese açık** olarak açar (`gh` gerekir; yoksa elle aç)
+2. Videolar olmadan `../<depo>`'ya klonlar
+3. `mes.anime` oluşturur, kapağı depoya `poster.jpg` olarak kopyalar ve gönderir
+4. `data/depolar.txt`'ye ekler ve mes-anime'yi gönderir
+
+`<depo>` adı sitedeki kimlik olur (linkler `#/izle/<depo>/...`). **Sonradan değiştirme.**
+
+### ekle — bölüm ekle
+
+    python3 mes.py ekle <depo> <video veya klasör> [seçenekler]
+
+| Seçenek | Açıklama |
+|---|---|
+| `--sezon 2` | Sezon numarası (varsayılan 1) |
+| `--bolum 5` | İlk bölüm numarası (varsayılan: o sezonun son bölümü + 1) |
+| `--baslik "Ad"` | Bölüm başlığı (tek dosyada; varsayılan "N. Sezon M. Bölüm") |
+| `--altyazi tr:dosya.srt` | Hazır altyazı (tek dosyada; tekrar verilebilir). Dil yazılmazsa `tr` |
+| `--ceviri-yok` | İngilizceden Türkçeye çevirme |
+| `--hiz ultrafast` | ffmpeg hızı (`ultrafast` hızlı ama büyük dosya, `medium` yavaş ama küçük) |
+
+Her video için sırayla:
+
+1. **Video**: Japonca ses varsa onu, yoksa ilk sesi seçer; 6 sn'lik AES-128 şifreli HLS yapar
+2. **Altyazı**: `--altyazi` verilenler -> yoksa videodaki metin altyazı (İngilizce öncelikli) `en.vtt`
+   -> `tr.vtt` yoksa otomatik çeviri. Hepsi temizlenir (fansub notları, ASS çizimleri, tekrarlar)
+3. **mes.anime** güncellenir
+4. **Gönderilir** (commit + push) ve yüklenen `.ts` dosyaları diskten silinir
+
+Klasör verilirse videolar doğal sırayla işlenir (`bolum2` < `bolum10`); başlamadan önce
+hangi dosyanın hangi bölüm olacağı listelenir. Her bölüm ayrı gönderildiği için yarıda
+kesilirse yapılanlar kaybolmaz; kalanlar için aynı komutu kalan dosyalarla tekrar çalıştır
+(numara kendiliğinden devam eder).
+
+### guncelle — listeyi yenile
+
+    python3 mes.py guncelle <depo>
+
+Bölüm klasörlerini elle eklediysen / sildiysen `mes.anime`'yi klasörlere göre yeniler ve gönderir.
+
+### klonla — videolar olmadan indir
+
+    python3 mes.py klonla <depo>
+
+Video deposu 8 GB+; bu komut sadece `m3u8`/`vtt`/`mes.anime` indirir (~3 MB).
+Zaten tam klon varsa `.ts` dosyalarını diskten kaldırır. (`ekle` ve diğerleri gerekirse kendisi klonlar.)
+
+### altyazi — toplu altyazı işleri
+
+    python3 mes.py altyazi temizle <depo>          # tüm .vtt'leri temizle
+    python3 mes.py altyazi cevir <depo> [--hepsi]  # tr.vtt olmayanları çevir (--hepsi: hepsini)
 
 ## mes.anime dosyası
 
@@ -84,8 +150,8 @@ Her video deposunun kökünde durur. JSON biçimindedir, yollar depo köküne g�
 | `category` | Kartta ve aramada görünür (ör. `Aksiyon`) |
 | `poster` | Depodaki dosya adı (`poster.jpg`) veya tam URL. Boşsa kartta isim yazar |
 | `episodes[].path` | Bölüm klasörü. İçinde `index.m3u8` olmalı |
-| `episodes[].title` | Bölüm adı. Elle değiştirilebilir, betikler üzerine yazmaz |
-| `episodes[].subtitles` | O klasördeki `<dil>.vtt` dosyaları. Sıra = menüdeki sıra (`tr` önce) |
+| `episodes[].title` | Bölüm adı. Elle değiştirilebilir, `mes.py` üzerine yazmaz |
+| `episodes[].subtitles` | O klasördeki `<dil>.vtt` dosyaları (`tr` önce) |
 | `id` (isteğe bağlı) | Animenin site kimliği. Yoksa depo adı (`opm`) kullanılır |
 | `episodes[].id` (isteğe bağlı) | Yoksa `path`'ten üretilir: `s1/ep1` -> `s1-ep1` |
 
@@ -95,64 +161,10 @@ Her video deposunun kökünde durur. JSON biçimindedir, yollar depo köküne g�
   geçmişinin, "kaldığın yer"in ve paylaşılan linklerin anahtarıdır. Depo adını veya klasör
   adını değiştirirsen izleyicilerin ilerlemesi sıfırlanır.
 - **Sezon numarası** bölüm kimliğinin başındaki `sN`'den okunur. Klasörler `sN/epM` düzeninde olmalı.
-- **Bölüm sırası** dosyadaki sıradır. `mesanime.py` sezon ve bölüm numarasına göre sıralar
-  (`ep0` sezonun ilk bölümü olur). Elle eklerken sırayı korumaya dikkat et.
+- **Bölüm sırası** dosyadaki sıradır. `mes.py` sezon ve bölüm numarasına göre sıralar
+  (`ep0` sezonun ilk bölümü olur).
 - Geçersiz JSON (ör. fazladan virgül) o animenin sitede hiç görünmemesine yol açar.
   Elle düzenledikten sonra `python3 -m json.tool ../opm/mes.anime` ile kontrol et.
-
-`mes.anime`'yi elle yazmana gerek yok, klasörlere bakıp kendisi oluşturur:
-
-    python3 scripts/mesanime.py opm
-
-Yeni klasörleri ekler, silinmiş klasörleri çıkarır, altyazı listelerini yeniler, var olan
-başlıklara dokunmaz, yenilere "N. Sezon M. Bölüm" verir.
-
-## Yeni Bölüm Ekleme
-
-    python3 scripts/pack.py /sdcard/Download/bolum.mkv opm s3/ep13 --extract-sub --tr
-    cd ../opm && git add --sparse -A && git commit -m "feat: S3 B13" && git push
-    git sparse-checkout reapply          # yüklenen .ts dosyalarını diskten siler
-
-`pack.py` `mes.anime`'yi kendisi günceller. Push ettikten birkaç dakika sonra bölüm sitede
-görünür (GitHub raw önbelleği ~5 dk). mes-anime'ye push gerekmez.
-
-| Seçenek | Açıklama |
-|---|---|
-| `--title "Ad"` | Bölüm başlığı (boşsa "N. Sezon M. Bölüm") |
-| `--extract-sub` | MKV içindeki ilk altyazıyı çıkarır ve temizler (`en.vtt`) |
-| `--tr` | İngilizce altyazıyı otomatik Türkçeye çevirir (`pip install deep-translator`) |
-| `--sub tr:altyazi.srt` | Hazır altyazı ekler (birden çok kez verilebilir) |
-| `--lang jpn` | Ses dili (varsayılan `jpn`; tek ses varsa `0`) |
-| `--preset veryfast` | FFmpeg hızı (`ultrafast` daha hızlı, dosya daha büyük) |
-| `--anime`, `--category`, `--poster` | Sadece yeni animenin ilk bölümünde gerekli |
-
-İnce noktalar:
-
-- `VIDEO_SECRET_KEY` tanımlı değilse `pack.py` durur (`source ~/.bashrc`).
-- Altyazı resim formatındaysa (PGS/DVD), metne çevrilemez; `.sup` olarak videonun yanına
-  kaydedilir, OCR ile `.srt` yapıp `--sub` ile eklemen gerekir.
-- `git add --sparse -A` şart: hafif klonda `.ts` dosyaları sparse dışında olduğu için
-  `--sparse` olmadan eklenmezler.
-- GitHub tek dosyada 100 MB sınırı koyar; 6 sn'lik parçalar bunun çok altındadır.
-
-Bölüm klasörlerini başka yolla (ör. hazır dosya kopyalayarak) eklediysen push etmeden önce:
-
-    python3 scripts/mesanime.py opm
-
-## Yeni Anime Ekleme
-
-1. GitHub'da yeni, **herkese açık** bir video deposu oluştur (ör. `mesflit/yeni-repo`).
-   Site dosyaları `raw.githubusercontent.com`'dan okuduğu için özel depolar çalışmaz.
-2. Klonla, bölümleri ekle, `mes.anime` oluştur ve pushla:
-
-       bash scripts/hafif_klon.sh yeni-repo
-       python3 scripts/pack.py bolum1.mkv yeni-repo s1/ep1 --anime "Anime Adı" --category "Aksiyon" --poster kapak.jpg --extract-sub --tr
-       cd ../yeni-repo && git add --sparse -A && git commit -m "feat: ilk bölüm" && git push
-
-   (Bölümler hazırsa `pack.py` yerine: `python3 scripts/mesanime.py yeni-repo --anime "Anime Adı" --poster kapak.jpg`)
-3. mes-anime'de `data/depolar.txt`'ye `mesflit/yeni-repo` satırını ekle ve master'a pushla.
-
-`--poster` yerel bir dosyaysa depoya `poster.<uzantı>` olarak kopyalanır.
 
 ## data/depolar.txt
 
@@ -160,15 +172,23 @@ Bölüm klasörlerini başka yolla (ör. hazır dosya kopyalayarak) eklediysen p
     mesflit/opm
     mesflit/baska-anime@dev      # main dışındaki bir dal
 
-- Sıra = ana sayfadaki sıra.
+- Sıra = ana sayfadaki sıra. `mes.py yeni` satırı kendisi ekler.
 - Bir deponun `mes.anime`'si okunamazsa (yok, bozuk JSON) o anime atlanır, diğerleri görünür.
   Sebep tarayıcı konsolunda yazar.
 
-## Altyazı araçları
+## İndirme nasıl çalışır?
 
-    python3 scripts/altyazi.py temizle opm   # fansub notlarını/çöp satırları temizler
-    python3 scripts/altyazi.py cevir opm     # tr.vtt olmayan bölümleri çevirir (--force: hepsini)
-    python3 scripts/altyazi.py kaydet opm    # mes.anime'yi klasörlere göre yeniler
+İzleme sayfasında videonun altında **"⬇ Bölümü indir (MP4)"** ve her altyazı için
+**"⬇ ... altyazı"** düğmeleri var.
+
+- Bölüm, tarayıcıda parça parça indirilir (6 parça aynı anda), şifresi çözülür ve
+  [mux.js](https://github.com/videojs/mux.js) ile tek bir **MP4** dosyasına çevrilir.
+  mux.js yüklenemezse veya çeviremezse dosya **.ts** olarak verilir (VLC / MX Player açar).
+- İlerleme yüzdesi gösterilir, "✕ İptal" ile durdurulabilir. Aynı anda tek bölüm iner;
+  başka bölüme geçince indirme arka planda sürer.
+- Altyazılar **.srt** olarak iner (videoyla aynı adla kaydedip oynatıcıda seç).
+- Dosya bellekte birleştirildiği için çok eski telefonlarda uzun bölümler zorlanabilir.
+- Not: İndirme, şifrelemenin amacını (videonun siteden dışarı çıkmaması) bilerek devre dışı bırakır.
 
 ## Yayın (deploy) ve şifreleme nasıl çalışır?
 
@@ -182,6 +202,18 @@ Bölüm klasörlerini başka yolla (ör. hazır dosya kopyalayarak) eklediysen p
 - Altyazılar şifresizdir. `raw.githubusercontent.com` VTT'yi `text/plain` sunduğu için
   site onları indirip `text/vtt` olarak oynatıcıya verir.
 - İzleme ilerlemesi ve ayarlar sadece tarayıcıda (`localStorage`, `ma:` önekli) tutulur.
+- Push sonrası değişikliklerin görünmesi GitHub raw önbelleği yüzünden ~5 dk sürebilir.
+
+## Sorun giderme
+
+| Durum | Çözüm |
+|---|---|
+| `VIDEO_SECRET_KEY tanımlı değil` | `source ~/.bashrc` |
+| `Türkçe çeviri atlandı` | `pip install deep-translator`, sonra `python3 mes.py altyazi cevir <depo>` |
+| `Altyazı resim formatında` | Videonun yanına `.sup` kaydedildi. `.srt` bul, `--altyazi tr:dosya.srt` ile tekrar ekle |
+| `gh yok` | `pkg install gh && gh auth login` ya da depoyu github.com/new'den elle aç (herkese açık) |
+| Anime sitede yok | `data/depolar.txt`'de var mı? Deponun `mes.anime`'si geçerli JSON mu? |
+| Bölüm yanlış numarayla eklendi | Klasörü sil (`git rm -r s1/ep5`), `python3 mes.py guncelle <depo>`, doğru `--bolum` ile tekrar ekle |
 
 ## Eski / kullanılmayan
 

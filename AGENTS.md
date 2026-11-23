@@ -30,50 +30,57 @@ Sitenin geri kalanı yalnızca bu iç biçimi bilir.
   (`ma:p:<anime>:<bölüm>`, `ma:last:<anime>`, `ma:subLang`, `ma:autoNext`) ve paylaşılan
   linkler (`#/izle/<anime>/<bölüm>`) bunlara bağlıdır. Biçimi değiştirme.
 - **Sezon** bölüm kimliğinin `^s(\d+)-` kısmından okunur (`seasonOf`). Klasör düzeni `sN/epM`.
-- **Şifreleme:** anahtar = `SHA-256(VIDEO_SECRET_KEY)[:16]`. `pack.py` (Python) ve
-  `index.html` (`initKey`) aynı türetmeyi yapmalı. `index.m3u8` içindeki `URI="enc.key"`
-  isteğini `KeyInterceptLoader` ağa çıkmadan karşılar. Bu üçünden biri değişirse tüm
-  mevcut bölümler oynatılamaz.
+- **Şifreleme:** anahtar = `SHA-256(VIDEO_SECRET_KEY)[:16]`. `araclar/video.py` (`aes_anahtari`)
+  ve `index.html` (`initKey`) aynı türetmeyi yapmalı. `index.m3u8` içindeki `URI="enc.key"`
+  isteğini `KeyInterceptLoader` ağa çıkmadan karşılar; indirme (`downloadEpisode`) aynı
+  `AES_KEY_BUF` ile WebCrypto AES-CBC çözer. Bunlardan biri değişirse tüm mevcut bölümler
+  oynatılamaz/indirilemez.
 - `index.html`'deki `__VIDEO_SECRET_KEY__` yer tutucusu `deploy.yml`'de `sed` ile değiştirilir.
   Adını değiştirme, gerçek anahtarı asla depoya yazma.
 - `mes.anime` biçimi: README'deki tabloya bak. Betikler var olan `title` ve bilinmeyen
   alanları korur; bunu bozma (kullanıcı başlıkları elle düzenler).
-- `mesanime.py` her bölümü tek satıra yazar (okunabilir diff için). Biçim JSON kalmalı.
+- `araclar/katalog.py` (`yaz`) her bölümü tek satıra yazar (okunabilir diff için). Biçim JSON kalmalı.
 
 ## Dosyalar
 
 | Dosya | Görev |
 |---|---|
-| `index.html` | Tüm site. hls.js 1.5.17 + Plyr 3.7.8 (jsDelivr). Hash tabanlı yönlendirme |
+| `index.html` | Tüm site. hls.js 1.5.17 + Plyr 3.7.8 (jsDelivr); indirmede mux.js 7.0.3 sadece gerekince yüklenir. Hash tabanlı yönlendirme |
 | `data/depolar.txt` | `sahip/depo[@dal]`, `#` yorum. Sıra = ana sayfa sırası |
-| `scripts/mesanime.py` | `../<depo>/sN/epM/index.m3u8` klasörlerini tarar, `../<depo>/mes.anime` yazar. `update()` ve `set_title()` başka betiklerden çağrılır |
-| `scripts/pack.py` | ffmpeg ile 6 sn'lik AES-128 HLS üretir, altyazıyı çıkarır/çevirir, sonra `mesanime.update()` |
-| `scripts/altyazi.py` | `temizle` / `cevir` / `kaydet` (kaydet = `mesanime.update`) |
-| `scripts/subs.py` | VTT ayrıştır/temizle/yaz (fansub notları, ASS vektör çizimleri, tekrarlar) |
-| `scripts/hafif_klon.sh` | Video deposunu `blob:none` + sparse (`!*.ts`) klonlar |
+| `mes.py` | Tek giriş noktası (argparse): `yeni`, `ekle`, `guncelle`, `klonla`, `altyazi`. Sadece iş akışı; işin kendisi `araclar/`'da |
+| `araclar/ayar.py` | `KULLANICI` (GH_USER, varsayılan mesflit), `KOK`, `depo_yolu()`, `calistir()`, `gizli_anahtar()` |
+| `araclar/video.py` | `hls_yap()`: ffprobe ile ses seçimi (jpn öncelikli), ffmpeg ile 6 sn'lik AES-128 HLS |
+| `araclar/altyazi.py` | VTT `oku/yaz/temizle`, `cikar()` (metin altyazı, eng öncelikli; resimse .sup), `cevir()` (deep-translator, başarısızsa RuntimeError, sahte tr.vtt yazmaz), `hazirla()` |
+| `araclar/katalog.py` | `mes.anime`: `oku/yaz/guncelle`, `bolumler()`, `sonraki_bolum()` |
+| `araclar/depo.py` | `klonla()` (blob:none + sparse `!*.ts`, boş depoyu da açar), `gonder()` (add --sparse, commit, push, sparse reapply), `olustur()` (gh), `siteye_ekle()` |
 | `.github/workflows/deploy.yml` | `master`/`main` push -> anahtar enjekte -> Pages |
 | `scripts/pipeline.py`, `auto_fansub.yml` | ESKİ, kullanılmıyor (Doodstream, eski `animes.json`). Kullanıcı istemedikçe dokunma |
 
-Betikler mes-anime kökünden çalıştırılır ve video deposunu `../<depo>` olarak bekler.
+`mes.py` mes-anime kökünden çalıştırılır ve video deposunu `../<depo>` olarak bekler
+(yoksa `depo.hazirla()` klonlar). Yeni iş eklerken mantığı `araclar/` içine koy, `mes.py`'ye
+sadece komut ekle.
 
 ## Sık görevler
 
-- **Yeni bölüm (video dosyası var):** `python3 scripts/pack.py <video> <depo> sN/epM --extract-sub --tr`,
-  sonra video deposunda `git add --sparse -A && git commit && git push`.
-- **Bölüm klasörleri zaten depoda, liste eksik:** `python3 scripts/mesanime.py <depo>`, sonra
-  video deposunda yalnızca `mes.anime`'yi commit + push.
-- **Yeni anime:** video deposunda `mes.anime` oluştur (`--anime`, `--category`, `--poster`),
-  sonra burada `data/depolar.txt`'ye satır ekle.
-- **Video deposunu klonlarken** `.ts` dosyalarını indirme (depo 8 GB+): `bash scripts/hafif_klon.sh <depo>`
+- **Yeni anime:** `python3 mes.py yeni <depo> "Ad" --kategori X --kapak resim.jpg`
+- **Yeni bölüm(ler):** `python3 mes.py ekle <depo> <video|klasör> [--sezon N] [--bolum M]`
+- **Bölüm klasörleri depoda, liste eksik:** `python3 mes.py guncelle <depo>`
+- **Video deposunu klonlarken** `.ts` dosyalarını indirme (depo 8 GB+): `python3 mes.py klonla <depo>`
   veya `git clone --depth 1 --filter=blob:none --no-checkout` + `git sparse-checkout set --no-cone '/*' '!*.ts'`.
+  Hafif klonda `git ls-tree -l`, `git log -p` gibi blob içeriğine bakan komutlar videoları indirmeye başlar.
 
 ## Test
 
 Otomatik test yok. Değişiklik sonrası:
 
-- `python3 -m py_compile scripts/*.py`
-- `python3 scripts/mesanime.py opm` -> "yeni bölüm yok" ve `git -C ../opm diff` boş olmalı
-  (biçim değişmediyse).
+- `python3 -m py_compile mes.py araclar/*.py`
+- `python3 mes.py guncelle opm --gonderme` -> yeni bölüm yazmamalı ve `git -C ../opm diff` boş olmalı.
+- `ekle` testi: `git init` ile sahte bir `../deneme` deposu, `katalog.guncelle(..., ad=...)`, ffmpeg
+  `lavfi testsrc` + `sine` + gömülü `.srt` ile test videosu, `VIDEO_SECRET_KEY=... python3 mes.py ekle deneme video.mkv --gonderme`.
+- İndirme testi: test videosunu `VIDEO_SECRET_KEY=__VIDEO_SECRET_KEY__` ile kodla (yerel sayfa bu
+  yer tutucuyu anahtar olarak kullanır), Playwright ile düğmeye bas, çıkan MP4'ü
+  `ffmpeg -v error -i x.mp4 -f null -` ile doğrula. Chromium'u `LANG=C.UTF-8` ile çalıştır,
+  yoksa Türkçe karakterli dosya adları "download" olur.
 - Site: `python3 -m http.server` ile aç, tarayıcıda ana sayfa kartı, bölüm sayısı, sezon
   sekmeleri ve altyazı listesini kontrol et. Videolar yerelde yoksa `.ts` 404'leri normaldir.
   `raw.githubusercontent.com` isteklerini yerel `../opm` dosyalarına yönlendirerek (ör.
@@ -83,6 +90,5 @@ Otomatik test yok. Değişiklik sonrası:
 
 - `raw.githubusercontent.com` ~5 dk önbellekler; push sonrası değişiklik hemen görünmeyebilir.
 - Video depoları herkese açık olmalı (raw URL'leri kimlik doğrulamasız okunur).
-- `scripts/__pycache__/` depoda izleniyor; bu dosyaları commit'e katma.
 - Commit mesajları Türkçe, `feat:` / `fix:` / `style:` / `chore:` önekleriyle.
 - Video deposuna ve `master`'a push etmeden önce kullanıcıdan onay al.

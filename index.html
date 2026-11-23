@@ -77,6 +77,11 @@
     .btn:hover:not(:disabled) { border-color: var(--accent); }
     .btn:disabled { opacity: .4; cursor: default; }
     .btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .dl-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .dl-bar .btn { font-size: .85rem; padding: 7px 12px; }
+    .dl-prog { flex: 1 1 160px; min-width: 120px; height: 6px; background: #2a3142; border-radius: 999px; overflow: hidden; }
+    .dl-prog > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+    .dl-note { font-size: .8rem; color: var(--muted); }
     .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); cursor: pointer; user-select: none; }
     .ep-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
     .ep-panel h3 { font-size: .95rem; margin-bottom: 10px; color: var(--muted); }
@@ -146,6 +151,7 @@
               <button id="nextBtn" class="btn btn-accent">Sonraki →</button>
             </div>
           </div>
+          <div id="dlBar" class="dl-bar"></div>
         </div>
         <aside class="ep-panel">
           <h3>Bölümler</h3>
@@ -352,6 +358,7 @@
       $("nextBtn").onclick = () => epIndex < anime.episodes.length - 1 && go(anime, epIndex + 1);
 
       renderEpisodes(anime, epIndex, seasonOf(ep));
+      renderDl();
       loadVideo(anime, ep);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -514,6 +521,150 @@
         store.set(progKey(anime, ep), { t: d, d, at: Date.now() });
         if ($("autoNext").checked && current && current.index < anime.episodes.length - 1) go(anime, current.index + 1);
       });
+    }
+
+    /* ---------- indirme ----------
+       Şifreli parçaları indirip tarayıcıda çözer ve tek dosya yapar.
+       mux.js ile MP4'e çevirir (her telefonda açılır); olmazsa .ts verir (VLC açar).
+       Altyazılar ayrıca .srt olarak indirilir. Aynı anda tek bölüm indirilir. */
+    const MUX_JS = "https://cdn.jsdelivr.net/npm/mux.js@7.0.3/dist/mux.min.js";
+    const PARALEL = 6;
+    let dl = null; // { key, title, pct, ctrl, text }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const fileName = s => s.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
+    function saveBlob(blob, name) {
+      const u = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement("a"), { href: u, download: name });
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 60000);
+    }
+    function loadScript(src) {
+      return new Promise((ok, no) => {
+        if (window.muxjs) return ok();
+        const s = Object.assign(document.createElement("script"), { src, onload: ok, onerror: () => no(new Error("mux.js yüklenemedi")) });
+        document.head.appendChild(s);
+      });
+    }
+
+    // HLS oynatma listesini parçalara ayırır: [{ url, iv }] (iv null = şifresiz)
+    function parsePlaylist(text, base) {
+      const segs = []; let key = null, seq = 0;
+      for (const raw of text.split(/\r?\n/)) {
+        const l = raw.trim();
+        if (!l) continue;
+        if (l.startsWith("#EXT-X-MEDIA-SEQUENCE:")) seq = parseInt(l.slice(22)) || 0;
+        else if (l.startsWith("#EXT-X-KEY:")) {
+          const m = /METHOD=([^,]+)/.exec(l), iv = /IV=0x([0-9a-f]+)/i.exec(l);
+          key = m && m[1] !== "NONE" ? { iv: iv ? iv[1].padStart(32, "0") : null } : null;
+        } else if (!l.startsWith("#")) {
+          let iv = null;
+          if (key) {
+            iv = new Uint8Array(16);
+            if (key.iv) key.iv.match(/../g).forEach((h, i) => iv[i] = parseInt(h, 16));
+            else new DataView(iv.buffer).setUint32(12, seq);   // IV yoksa sıra numarası
+          }
+          segs.push({ url: new URL(l, base).href, iv }); seq++;
+        }
+      }
+      return segs;
+    }
+
+    async function downloadEpisode(anime, ep) {
+      if (dl) return;
+      const ctrl = new AbortController(), signal = ctrl.signal;
+      dl = { key: anime.id + "/" + ep.id, title: ep.title, pct: 0, ctrl, text: "Hazırlanıyor..." };
+      renderDl();
+      const name = fileName(`${anime.title} - ${ep.title}`);
+      try {
+        const segs = parsePlaylist(await (await fetch(ep.m3u8, { signal })).text(), ep.m3u8);
+        if (!segs.length) throw new Error("Bölüm listesi boş");
+        const aes = await crypto.subtle.importKey("raw", AES_KEY_BUF, "AES-CBC", false, ["decrypt"]);
+        const get = async s => {
+          for (let i = 0; ; i++) {
+            try {
+              const r = await fetch(s.url, { signal });
+              if (!r.ok) throw new Error("HTTP " + r.status);
+              let b = await r.arrayBuffer();
+              if (s.iv) b = await crypto.subtle.decrypt({ name: "AES-CBC", iv: s.iv }, aes, b);
+              return new Uint8Array(b);
+            } catch (e) { if (signal.aborted || i >= 3) throw e; await sleep(1500 * (i + 1)); }
+          }
+        };
+
+        let mux = null, mp4 = [], ts = [];
+        try {
+          await loadScript(MUX_JS);
+          mux = new muxjs.mp4.Transmuxer({ remux: true });
+          mux.on("data", d => { if (!mp4.length) mp4.push(new Blob([d.initSegment])); mp4.push(new Blob([d.data])); });
+        } catch { mux = null; }
+
+        let done = 0;
+        for (let i = 0; i < segs.length; i += PARALEL) {
+          const batch = await Promise.all(segs.slice(i, i + PARALEL).map(get));
+          for (const b of batch) {
+            if (mux) {
+              mux.push(b); mux.flush();
+              if (done === 0 && !mp4.length) { mux = null; }   // MP4'e çevrilemedi -> .ts
+            }
+            if (!mux) ts.push(new Blob([b]));
+            done++;
+          }
+          dl.pct = Math.round(done / segs.length * 100);
+          dl.text = `İndiriliyor %${dl.pct}`;
+          renderDl();
+        }
+        if (mux && mp4.length) saveBlob(new Blob(mp4, { type: "video/mp4" }), name + ".mp4");
+        else saveBlob(new Blob(ts, { type: "video/mp2t" }), name + ".ts");
+        dl = null; renderDl();
+      } catch (e) {
+        const cancelled = signal.aborted;
+        dl = null; renderDl();
+        if (!cancelled) alert("İndirme başarısız: " + (e.message || e));
+      }
+    }
+
+    function vttToSrt(vtt) {
+      const fix = t => { t = t.replace(".", ","); return t.split(":").length === 2 ? "00:" + t : t; };
+      let n = 0;
+      return vtt.replace(/\r/g, "").split(/\n\s*\n/).map(b => {
+        const lines = b.split("\n");
+        const i = lines.findIndex(l => l.includes("-->"));
+        const m = i < 0 ? null : /([\d:.]+)\s+-->\s+([\d:.]+)/.exec(lines[i]);
+        return m ? `${++n}\n${fix(m[1])} --> ${fix(m[2])}\n${lines.slice(i + 1).join("\n")}` : null;
+      }).filter(Boolean).join("\n\n") + "\n";
+    }
+
+    async function downloadSub(anime, ep, s) {
+      try {
+        const r = await fetch(s.src, { cache: "no-cache" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const label = s.label || LANG_LABELS[s.lang] || s.lang;
+        saveBlob(new Blob([vttToSrt(await r.text())], { type: "application/x-subrip" }),
+                 fileName(`${anime.title} - ${ep.title}.${s.lang}`) + ".srt");
+      } catch (e) { alert("Altyazı indirilemedi: " + (e.message || e)); }
+    }
+
+    function renderDl() {
+      const bar = $("dlBar");
+      if (!bar || !current) return;
+      const { anime } = current, ep = anime.episodes[current.index];
+      bar.innerHTML = "";
+      const btn = (text, cls, fn) => {
+        const b = document.createElement("button");
+        b.className = "btn" + (cls ? " " + cls : ""); b.textContent = text; b.onclick = fn;
+        bar.appendChild(b); return b;
+      };
+      if (dl && dl.key === anime.id + "/" + ep.id) {
+        btn("✕ İptal", "", () => dl && dl.ctrl.abort());
+        bar.insertAdjacentHTML("beforeend", `<div class="dl-prog"><i style="width:${dl.pct}%"></i></div><span class="dl-note">${esc(dl.text)}</span>`);
+      } else if (dl) {
+        btn("⬇ Bölümü indir", "", null).disabled = true;
+        bar.insertAdjacentHTML("beforeend", `<span class="dl-note">Başka bölüm iniyor (${esc(dl.title)}, %${dl.pct})</span>`);
+      } else {
+        btn("⬇ Bölümü indir (MP4)", "", () => downloadEpisode(anime, ep));
+      }
+      (ep.subtitles || []).forEach(s => btn(`⬇ ${s.label || LANG_LABELS[s.lang] || s.lang} altyazı`, "", () => downloadSub(anime, ep, s)));
     }
 
     function onKey(e) {
