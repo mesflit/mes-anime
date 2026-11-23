@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d2332"/>
+      <stop offset="1" stop-color="#0b0d12"/>
+    </linearGradient>
+    <linearGradient id="kirmizi" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff3b45"/>
+      <stop offset="1" stop-color="#c4000c"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <g>
+    <path d="M190 118 L376 222 L190 326 Z" fill="url(#kirmizi)" stroke="url(#kirmizi)" stroke-width="30" stroke-linejoin="round"/>
+    <rect x="128" y="374" width="256" height="32" rx="16" fill="#fff"/>
+    <rect x="172" y="424" width="168" height="32" rx="16" fill="#fff" opacity=".55"/>
+  </g>
+</svg>

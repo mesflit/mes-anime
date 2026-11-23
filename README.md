@@ -28,12 +28,36 @@ ayrı ayrı gönderir. Birkaç dakika sonra sitede görünür.
 - **İndirme**: bölümü MP4, altyazıları SRT olarak indirme (bkz. "İndirme nasıl çalışır?")
 - **Kalite seçimi**: bölümün 480p kopyası varsa Otomatik / 1080p / 480p menüsü; internet yavaşsa kendiliğinden düşer (kopyaları video deposundaki `resize.py` üretir)
 - Arama (anime adı ve kategoride)
+- Uygulama gibi yükleme: telefonda tarayıcı menüsü -> "Ana ekrana ekle" (kendi simgesiyle tam ekran açılır)
+- Link paylaşınca önizleme görseli (WhatsApp, Telegram, X, Discord)
+- Yükleniyor / hata ekranı ("Tekrar dene"), 404 sayfası, klavye ve ekran okuyucu desteği
 
 ## Depo yapısı
 
     mes-anime/
-    ├── index.html             # Sitenin tamamı (HTML + CSS + JS, tek dosya)
-    ├── mes.py                 # Yönetim aracı: yeni / ekle / guncelle / klonla / altyazi
+    ├── index.html             # Sayfa iskeleti (HTML) + SECRET_KEY satırı
+    ├── 404.html               # Bulunamayan sayfa (eski linkleri yeni adrese yönlendirir)
+    ├── manifest.webmanifest   # "Ana ekrana ekle" / uygulama olarak yükleme bilgisi
+    ├── assets/
+    │   ├── css/
+    │   │   ├── temel.css      #   renkler, üst bar, düğmeler, alt bilgi, yükleniyor/hata
+    │   │   ├── anasayfa.css   #   anime kartları, "İzlemeye Devam Et"
+    │   │   └── izleme.css     #   oynatıcı, bölüm listesi, indirme, altyazı görünümü
+    │   ├── js/                #   (tarayıcının kendi modülleri; derleme adımı yok)
+    │   │   ├── uygulama.js    #   giriş noktası: açılış ve sayfa yönlendirme
+    │   │   ├── ayarlar.js     #   sabitler (dil adları, CDN adresleri)
+    │   │   ├── durum.js       #   paylaşılan durum (konsolda: window.mesAnime)
+    │   │   ├── veri.js        #   depolar.txt + mes.anime okuma
+    │   │   ├── anasayfa.js    #   ana sayfa, arama, devam et
+    │   │   ├── izleme.js      #   bölüm sayfası, sezon sekmeleri, kısayollar
+    │   │   ├── oynatici.js    #   hls.js + Plyr, altyazı, kalite menüsü, kaldığın yer
+    │   │   ├── indirme.js     #   MP4/480p/SRT indirme
+    │   │   ├── sifre.js       #   video anahtarı (SHA-256), enc.key yakalayıcı
+    │   │   ├── kayit.js       #   localStorage (ilerleme, tercihler)
+    │   │   ├── gezinme.js     #   #/izle/... adresleri
+    │   │   └── yardimci.js    #   küçük yardımcılar
+    │   └── icons/             #   simge (svg/png/ico), paylaşım önizlemesi (og.jpg)
+    ├── mes.py                 # Yönetim aracı: yeni / ekle / guncelle / klonla / altyazi / anahtar
     ├── araclar/               # mes.py'nin modülleri
     │   ├── ayar.py            #   ortak ayarlar (GitHub kullanıcı adı, yollar, dil adları)
     │   ├── video.py           #   videoyu şifreli HLS'e çevirme
@@ -46,7 +70,7 @@ ayrı ayrı gönderir. Birkaç dakika sonra sitede görünür.
     │   └── processed.txt      # pipeline.py'nin kaydı (kullanılmıyor)
     ├── scripts/pipeline.py    # ESKİ: torrent + Doodstream hattı (kapalı, bkz. aşağı)
     └── .github/workflows/
-        ├── deploy.yml         # master'a push -> anahtarı gömer, GitHub Pages'e yayınlar
+        ├── deploy.yml         # master'a push -> anahtarı ve sürümü gömer, GitHub Pages'e yayınlar
         └── auto_fansub.yml    # ESKİ: pipeline.py'yi çalıştırır (sadece elle)
 
 Video depoları mes-anime'nin **yanında** durur (`mes.py` onları `../<depo>` olarak arar, yoksa kendisi klonlar):
@@ -253,6 +277,16 @@ Her video deposunun kökünde durur. JSON biçimindedir, yollar depo köküne g�
 | `gh yok` | `pkg install gh && gh auth login` ya da depoyu github.com/new'den elle aç (herkese açık) |
 | Anime sitede yok | `data/depolar.txt`'de var mı? Deponun `mes.anime`'si geçerli JSON mu? |
 | Bölüm yanlış numarayla eklendi | Klasörü sil (`git rm -r s1/ep5`), `python3 mes.py guncelle <depo>`, doğru `--bolum` ile tekrar ekle |
+
+## Siteyi geliştirmek
+
+- Derleme adımı yok: dosyayı değiştir, master'a gönder, yayınlanır.
+- Yerelde denemek için mes-anime klasöründe `python3 -m http.server` ve tarayıcıda `http://localhost:8000`
+  (dosyayı doğrudan açmak çalışmaz, modüller sunucu ister).
+- `index.html`'deki `const SECRET_KEY = "__VIDEO_SECRET_KEY__";` satırını değiştirme ve JS dosyasına
+  taşıma: yayınlarken anahtar buraya yazılır, `mes.py anahtar` ve `resize.py` de buradan okur.
+- Yayında CSS/JS'ye sürüm eklenir (`?v=...`), telefonlar eski dosyayı önbellekten getirmez.
+- Simgeyi değiştirmek: `assets/icons/icon.svg` (ve `maskable.svg`), PNG'leri yeniden üret.
 
 ## Eski / kullanılmayan
 

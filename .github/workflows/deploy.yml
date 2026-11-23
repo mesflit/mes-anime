@@ -25,9 +25,13 @@ jobs:
           VIDEO_SECRET_KEY: ${{ secrets.VIDEO_SECRET_KEY }}
         run: |
           mkdir -p _site
-          cp -r index.html data _site/
+          cp -r index.html 404.html manifest.webmanifest assets data _site/
           [ -d videos ] && cp -r videos _site/ || true
           sed -i "s|__VIDEO_SECRET_KEY__|${VIDEO_SECRET_KEY}|g" _site/index.html
+          # Sürüm damgası: yeni yayında telefonlar eski CSS/JS'yi önbellekten getirmesin
+          SURUM="${GITHUB_SHA::8}"
+          sed -i "s|__SURUM__|${SURUM}|g" _site/index.html
+          sed -i -E "s#(from \"\./[a-z]+\.js)\"#\1?v=${SURUM}\"#g" _site/assets/js/*.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: "_site"

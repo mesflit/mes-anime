@@ -5,7 +5,7 @@ Bu dosya bu depoda çalışan yapay zekâ ajanları (Claude, Codex vb.) içindir
 ## Proje özeti
 
 GitHub Pages'te yayınlanan, AES-128 şifreli HLS videoları oynatan statik anime sitesi.
-Site tek dosyadır (`index.html`, derleme adımı yok). Videolar ayrı, herkese açık depolardadır
+Site derleme adımı olmayan statik bir sayfadır: `index.html` iskelet, `assets/css/*.css`, `assets/js/*.js` (tarayıcının ES modülleri). Videolar ayrı, herkese açık depolardadır
 (ör. `mesflit/opm`); site her deponun kökündeki `mes.anime` dosyasını çalışma anında
 `raw.githubusercontent.com`'dan okur. Hangi depoların okunacağı `data/depolar.txt`'dedir.
 
@@ -19,7 +19,7 @@ Türkçedir. Kullanıcı genelde telefondan (Termux) çalışır.
                                          ├─ poster    -> <base>/poster.jpg
                                          └─ episodes  -> <base>/<path>/index.m3u8, <base>/<path>/<dil>.vtt
 
-`index.html` içindeki `loadRepo()` `mes.anime`'yi sitenin iç biçimine çevirir:
+`assets/js/veri.js` içindeki `loadRepo()` `mes.anime`'yi sitenin iç biçimine çevirir:
 `{id, title, category, poster, episodes: [{id, title, m3u8, subtitles: [{lang, label, src}]}]}`.
 Sitenin geri kalanı yalnızca bu iç biçimi bilir.
 
@@ -31,17 +31,19 @@ Sitenin geri kalanı yalnızca bu iç biçimi bilir.
   linkler (`#/izle/<anime>/<bölüm>`) bunlara bağlıdır. Biçimi değiştirme.
 - **Sezon** bölüm kimliğinin `^s(\d+)-` kısmından okunur (`seasonOf`). Klasör düzeni `sN/epM`.
 - **Şifreleme:** anahtar = `SHA-256(VIDEO_SECRET_KEY)[:16]`. `araclar/video.py` (`aes_anahtari`)
-  ve `index.html` (`initKey`) aynı türetmeyi yapmalı. `index.m3u8` içindeki `URI="enc.key"`
+  ve `assets/js/sifre.js` (`initKey`) aynı türetmeyi yapmalı. `index.m3u8` içindeki `URI="enc.key"`
   isteğini `KeyInterceptLoader` ağa çıkmadan karşılar; indirme (`downloadEpisode`) aynı
   `AES_KEY_BUF` ile WebCrypto AES-CBC çözer. Bunlardan biri değişirse tüm mevcut bölümler
   oynatılamaz/indirilemez.
-- `index.html`'deki `const SECRET_KEY = "__VIDEO_SECRET_KEY__"` satırı `deploy.yml`'de `sed` ile doldurulur;
+- `index.html`'deki satır içi `<script>const SECRET_KEY = "__VIDEO_SECRET_KEY__";</script>` (modüller bu global
+  `const`'u okur; JS dosyasına taşıma) satırı `deploy.yml`'de `sed` ile doldurulur;
   `mes.py anahtar` anahtarı yayındaki sayfadan bu satırla okur. Satırın biçimini ve yer tutucunun adını
   değiştirme, gerçek anahtarı asla depoya yazma. Kullanıcının cihazlarında anahtar yoktu; tek kaynak
   GitHub secret'ı + yayındaki sayfa.
 - `mes.anime` biçimi: README'deki tabloya bak. Betikler var olan `title` ve bilinmeyen
   alanları korur; bunu bozma (kullanıcı başlıkları elle düzenler).
-- Kalite: `variants` (video deposundaki `resize.py` yazar) varsa site `masterPlaylist()` ile blob: master
+- Plyr'a `quality: undefined` VERME (varsayılanı siler, oynatıcı çöker); seçenek yoksa anahtarı hiç koyma.
+- Kalite: `variants` (video deposundaki `resize.py` yazar) varsa site (`oynatici.js`) `masterPlaylist()` ile blob: master
   playlist üretir; Plyr `quality` (forced) menüsü `hls.currentLevel`'i değiştirir, seçim `ma:quality`.
   Orijinal `index.m3u8` ve parçaları asla değiştirme; kopyalar sadece `<bölüm>/<N>p/` altındadır.
 - `araclar/katalog.py` (`yaz`) her bölümü tek satıra yazar (okunabilir diff için). Biçim JSON kalmalı.
@@ -50,7 +52,11 @@ Sitenin geri kalanı yalnızca bu iç biçimi bilir.
 
 | Dosya | Görev |
 |---|---|
-| `index.html` | Tüm site. hls.js 1.5.17 + Plyr 3.7.8 (jsDelivr); indirmede mux.js 7.0.3 sadece gerekince yüklenir. Hash tabanlı yönlendirme |
+| `index.html` | Sayfa iskeleti, meta/OG/simge/manifest bağlantıları, `SECRET_KEY`, hls.js 1.5.17 + Plyr 3.7.8 (jsDelivr, klasik script), `assets/js/uygulama.js` (module) |
+| `assets/js/*.js` | ES modülleri, döngüsel import yok. `durum.js` paylaşılan durum (`window.mesAnime`), `uygulama.js` giriş + `route()`, `veri.js`, `anasayfa.js`, `izleme.js`, `oynatici.js` (hls/Plyr/kalite), `indirme.js` (mux.js 7.0.3 gerekince), `sifre.js`, `kayit.js`, `gezinme.js`, `yardimci.js`, `ayarlar.js`. Hash tabanlı yönlendirme |
+| `assets/css/*.css` | `temel.css` (renk değişkenleri `:root`), `anasayfa.css`, `izleme.css` |
+| `assets/icons/` | `icon.svg`/`maskable.svg` kaynak; PNG/ICO/`og.jpg` bunlardan Playwright ile üretildi |
+| `manifest.webmanifest`, `404.html` | Uygulama olarak yükleme; 404 (yol `/mes-anime/` sabit, `/izle/...`'yi `#/izle/...`'ye yönlendirir) |
 | `data/depolar.txt` | `sahip/depo[@dal]`, `#` yorum. Sıra = ana sayfa sırası |
 | `mes.py` | Tek giriş noktası (argparse): `yeni`, `ekle`, `guncelle`, `klonla`, `altyazi`. Sadece iş akışı; işin kendisi `araclar/`'da |
 | `araclar/ayar.py` | `KULLANICI` (GH_USER, varsayılan mesflit), `KOK`, `depo_yolu()`, `calistir()`, `gizli_anahtar()` (ortam değişkeni -> `~/.mes-anime-anahtar` -> yayındaki sitenin `SECRET_KEY`'i; `MES_SITE` ile adres değişir) |
@@ -58,7 +64,7 @@ Sitenin geri kalanı yalnızca bu iç biçimi bilir.
 | `araclar/altyazi.py` | VTT `oku/yaz/temizle`, `cikar()` (metin altyazı, eng öncelikli; resimse .sup), `cevir()` (deep-translator, başarısızsa RuntimeError, sahte tr.vtt yazmaz), `hazirla()` |
 | `araclar/katalog.py` | `mes.anime`: `oku/yaz/guncelle`, `bolumler()`, `sonraki_bolum()` |
 | `araclar/depo.py` | `klonla()` (blob:none + sparse `!*.ts`, boş depoyu da açar), `gonder()` (add --sparse, commit, push, sparse reapply), `olustur()` (gh), `siteye_ekle()` |
-| `.github/workflows/deploy.yml` | `master`/`main` push -> anahtar enjekte -> Pages |
+| `.github/workflows/deploy.yml` | `master`/`main` push -> `index.html 404.html manifest.webmanifest assets data`'yı `_site`'a kopyalar, anahtarı ve `__SURUM__`'u (commit sha) `index.html`'e, `?v=` sürümünü JS import'larına yazar -> Pages. Yeni kök dosya eklersen buradaki `cp` listesine ekle |
 | `scripts/pipeline.py`, `auto_fansub.yml` | ESKİ, kullanılmıyor (Doodstream, eski `animes.json`). Kullanıcı istemedikçe dokunma |
 
 `mes.py` mes-anime kökünden çalıştırılır ve video deposunu `../<depo>` olarak bekler
@@ -86,6 +92,9 @@ Otomatik test yok. Değişiklik sonrası:
   yer tutucuyu anahtar olarak kullanır), Playwright ile düğmeye bas, çıkan MP4'ü
   `ffmpeg -v error -i x.mp4 -f null -` ile doğrula. Chromium'u `LANG=C.UTF-8` ile çalıştır,
   yoksa Türkçe karakterli dosya adları "download" olur.
+- Site testinde hem 480p'si OLAN hem OLMAYAN bölümü aç ve `pageerror` dinle; `window.mesAnime.player.ready`
+  ve `hls.levels` kontrol et. Test sitesindeki `SECRET_KEY` test videolarının anahtarıyla aynı olmalı
+  (yoksa fragParsingError alırsın). Playwright'ta `favicon.ico` fetch'i başarısız görünür, gerçek tarayıcıda sorun yok.
 - Site: `python3 -m http.server` ile aç, tarayıcıda ana sayfa kartı, bölüm sayısı, sezon
   sekmeleri ve altyazı listesini kontrol et. Videolar yerelde yoksa `.ts` 404'leri normaldir.
   `raw.githubusercontent.com` isteklerini yerel `../opm` dosyalarına yönlendirerek (ör.

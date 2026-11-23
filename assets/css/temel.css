@@ -1,0 +1,78 @@
+/* Ortak: renkler, sayfa iskeleti, üst bar, düğmeler, alt bilgi, yardımcı sınıflar */
+:root {
+  --bg: #0b0d12; --card: #151923; --card2: #1d2332; --border: #232938;
+  --text: #eef1f7; --muted: #8b95a7; --accent: #e50914; --ok: #3ecf6e;
+  --radius: 12px;
+  --plyr-color-main: #e50914;
+  --plyr-captions-background: transparent;
+  --plyr-captions-text-color: #fff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+button { font: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Klavye kullananlar için "içeriğe geç" bağlantısı */
+.skip { position: absolute; left: -999px; top: 8px; z-index: 50; background: var(--accent); color: #fff; padding: 8px 12px; border-radius: 8px; }
+.skip:focus { left: 8px; }
+
+/* Üst bar */
+header {
+  position: sticky; top: 0; z-index: 20; background: rgba(11,13,18,.92);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+  padding: 12px 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+}
+.logo { display: inline-flex; align-items: center; gap: 8px; font-size: 1.3rem; font-weight: 800; letter-spacing: -.5px; color: var(--text); text-decoration: none; }
+.logo img { width: 28px; height: 28px; display: block; }
+.logo strong { font-weight: inherit; }
+.logo span { color: var(--accent); }
+.search {
+  flex: 1; min-width: 160px; max-width: 380px; margin-left: auto;
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  padding: 9px 14px; border-radius: 8px; outline: none; font-size: 1rem;
+}
+.search:focus { border-color: var(--accent); }
+
+main { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
+
+/* Düğmeler */
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  background: var(--card); color: var(--text); border: 1px solid var(--border);
+  padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: .9rem; font-weight: 600;
+  text-decoration: none; display: inline-block;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); cursor: pointer; user-select: none; }
+
+/* İlerleme çubuğu (kartlarda ve bölüm listesinde) */
+.bar { height: 3px; background: #2a3142; }
+.bar > i { display: block; height: 100%; background: var(--accent); }
+
+/* Durum mesajları: yükleniyor / boş / hata */
+.empty { text-align: center; color: var(--muted); padding: 60px 20px; }
+.empty .btn { margin-top: 14px; }
+.spinner {
+  width: 34px; height: 34px; margin: 0 auto 14px; border-radius: 50%;
+  border: 3px solid var(--border); border-top-color: var(--accent); animation: don 0.9s linear infinite;
+}
+@keyframes don { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } .card { transition: none; } }
+
+/* Alt bilgi */
+footer {
+  border-top: 1px solid var(--border); color: var(--muted); font-size: .8rem;
+  padding: 18px 16px 28px; text-align: center; line-height: 1.7;
+}
+@media (hover: none) { .kisayollar { display: none; } }   /* dokunmatik ekranda klavye kısayolları gereksiz */
+footer kbd { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; font-size: .75rem; }
+
+.hidden { display: none !important; }

@@ -1,0 +1,25 @@
+/* Ana sayfa: anime kartları ve "İzlemeye Devam Et" satırı */
+h2.section { font-size: 1.05rem; margin: 4px 0 12px; }
+.row { margin-bottom: 28px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+@media (max-width: 600px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; cursor: pointer; transition: transform .18s, border-color .18s;
+  text-align: left; color: inherit; padding: 0; display: block; width: 100%;
+}
+.card:hover, .card:focus-visible { transform: translateY(-4px); border-color: var(--accent); outline: none; }
+.poster {
+  aspect-ratio: 3/4; background: linear-gradient(135deg, #1f2638, #11141d);
+  background-size: cover; background-position: center; position: relative;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--muted);
+}
+.poster.wide { aspect-ratio: 16/9; }
+.badge {
+  position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.78);
+  padding: 3px 8px; border-radius: 6px; font-size: .75rem; color: #fff;
+}
+.badge.tr { top: auto; bottom: 8px; right: auto; left: 8px; background: var(--accent); }
+.card-body { padding: 8px 10px; }
+.card-title { font-weight: 700; font-size: .9rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-meta { font-size: .8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

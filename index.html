@@ -2,128 +2,56 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0b0d12" />
-  <meta name="description" content="mes-anime — Türkçe altyazılı anime izle" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>mes-anime</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css" />
-  <style>
-    :root {
-      --bg: #0b0d12; --card: #151923; --card2: #1d2332; --border: #232938;
-      --text: #eef1f7; --muted: #8b95a7; --accent: #e50914;
-      --plyr-color-main: #e50914;
-      --plyr-captions-background: transparent;
-      --plyr-captions-text-color: #fff;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { -webkit-text-size-adjust: 100%; }
-    body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; min-height: 100vh; }
-    button { font: inherit; }
-    header {
-      position: sticky; top: 0; z-index: 20; background: rgba(11,13,18,.92);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
-      padding: 12px 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
-    }
-    .logo { font-size: 1.3rem; font-weight: 800; letter-spacing: -.5px; color: var(--text); text-decoration: none; }
-    .logo span { color: var(--accent); }
-    .search {
-      flex: 1; min-width: 160px; max-width: 380px; margin-left: auto;
-      background: var(--card); border: 1px solid var(--border); color: var(--text);
-      padding: 9px 14px; border-radius: 8px; outline: none; font-size: 1rem;
-    }
-    .search:focus { border-color: var(--accent); }
-    main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
-    h2.section { font-size: 1.05rem; margin: 4px 0 12px; }
-    .row { margin-bottom: 28px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-    @media (max-width: 600px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
-    .card {
-      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-      overflow: hidden; cursor: pointer; transition: transform .18s, border-color .18s;
-      text-align: left; color: inherit; padding: 0; display: block; width: 100%;
-    }
-    .card:hover, .card:focus-visible { transform: translateY(-4px); border-color: var(--accent); outline: none; }
-    .poster {
-      aspect-ratio: 3/4; background: linear-gradient(135deg, #1f2638, #11141d);
-      background-size: cover; background-position: center; position: relative;
-      display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--muted);
-    }
-    .poster.wide { aspect-ratio: 16/9; }
-    .badge {
-      position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.78);
-      padding: 3px 8px; border-radius: 6px; font-size: .75rem; color: #fff;
-    }
-    .badge.tr { top: auto; bottom: 8px; right: auto; left: 8px; background: var(--accent); }
-    .card-body { padding: 8px 10px; }
-    .card-title { font-weight: 700; font-size: .9rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-meta { font-size: .8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bar { height: 3px; background: #2a3142; }
-    .bar > i { display: block; height: 100%; background: var(--accent); }
+  <meta name="description" content="mes-anime — Türkçe altyazılı anime izle. Kaldığın yerden devam et, bölüm indir." />
+  <meta name="theme-color" content="#0b0d12" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
 
-    /* İzleme */
-    .watch-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
-    @media (max-width: 900px) { .watch-wrap { grid-template-columns: minmax(0, 1fr); } }
-    .player-box { background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); aspect-ratio: 16/9; position: relative; }
-    .player-box video, .player-box iframe, .player-box .plyr { width: 100%; height: 100%; border: 0; display: block; }
-    .player-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; color: var(--muted); background: rgba(0,0,0,.75); z-index: 5; }
-    .watch-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
-    .watch-bar h1 { font-size: 1.15rem; }
-    .sub { font-size: .85rem; color: var(--muted); margin-top: 4px; }
-    .btns { display: flex; gap: 8px; flex-wrap: wrap; }
-    .btn {
-      background: var(--card); color: var(--text); border: 1px solid var(--border);
-      padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: .9rem; font-weight: 600;
-    }
-    .btn:hover:not(:disabled) { border-color: var(--accent); }
-    .btn:disabled { opacity: .4; cursor: default; }
-    .btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .dl-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-    .dl-bar .btn { font-size: .85rem; padding: 7px 12px; }
-    .dl-prog { flex: 1 1 160px; min-width: 120px; height: 6px; background: #2a3142; border-radius: 999px; overflow: hidden; }
-    .dl-prog > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
-    .dl-note { font-size: .8rem; color: var(--muted); }
-    .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); cursor: pointer; user-select: none; }
-    .ep-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
-    .ep-panel h3 { font-size: .95rem; margin-bottom: 10px; color: var(--muted); }
-    .tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
-    .tab { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 5px 12px; border-radius: 999px; cursor: pointer; font-size: .85rem; }
-    .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .ep-list { max-height: 520px; overflow-y: auto; }
-    .ep-item {
-      width: 100%; text-align: left; background: transparent; color: var(--text);
-      border: 1px solid transparent; padding: 10px 12px; border-radius: 8px;
-      cursor: pointer; margin-bottom: 6px; font-size: .9rem; display: block; position: relative; overflow: hidden;
-    }
-    .ep-item:hover { background: var(--card2); }
-    .ep-item.active { background: rgba(229,9,20,.15); border-color: var(--accent); font-weight: 700; }
-    .ep-item small { color: var(--muted); font-weight: 400; margin-left: 6px; }
-    .ep-item .bar { position: absolute; left: 0; right: 0; bottom: 0; }
-    .ep-item.done::after { content: "✓"; position: absolute; right: 12px; top: 10px; color: #3ecf6e; }
-    .hidden { display: none !important; }
-    .empty { text-align: center; color: var(--muted); padding: 60px 20px; }
-    .plyr__captions .plyr__caption {
-      font-size: clamp(15px, 2.6vw, 30px); line-height: 1.3; font-weight: 700; color: #fff;
-      background: transparent; padding: 0 .2em;
-      /* Saydam arka planda okunabilirlik için siyah kontur + gölge */
-      -webkit-text-stroke: 0; paint-order: stroke fill;
-      text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
-                   0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 0 3px 6px rgba(0,0,0,.8);
-    }
-    video::cue {
-      background: transparent; color: #fff; font-weight: 700;
-      text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 3px 6px rgba(0,0,0,.8);
-    }
-    .plyr--fullscreen-active .plyr__captions .plyr__caption { font-size: clamp(20px, 3vw, 44px); }
-  </style>
+  <!-- Simge ve uygulama olarak yükleme (ana ekrana ekle) -->
+  <link rel="icon" href="assets/icons/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="mes-anime" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Link paylaşınca çıkan önizleme (WhatsApp, Telegram, X, Discord) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="mes-anime" />
+  <meta property="og:title" content="mes-anime" />
+  <meta property="og:description" content="Türkçe altyazılı anime izle." />
+  <meta property="og:locale" content="tr_TR" />
+  <meta property="og:url" content="https://mesflit.github.io/mes-anime/" />
+  <meta property="og:image" content="https://mesflit.github.io/mes-anime/assets/icons/og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Dış kaynaklara erken bağlan (daha hızlı açılış) -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css" />
+  <link rel="stylesheet" href="assets/css/temel.css?v=__SURUM__" />
+  <link rel="stylesheet" href="assets/css/anasayfa.css?v=__SURUM__" />
+  <link rel="stylesheet" href="assets/css/izleme.css?v=__SURUM__" />
 </head>
 <body>
+  <a class="skip" href="#main">İçeriğe geç</a>
+
   <header>
-    <a class="logo" href="#/">mes<span>-anime</span></a>
-    <input id="search" class="search" type="search" placeholder="Anime ara..." autocomplete="off" />
+    <a class="logo" href="#/" aria-label="mes-anime ana sayfa"><img src="assets/icons/icon.svg" alt="" width="28" height="28" /><strong>mes<span>-anime</span></strong></a>
+    <input id="search" class="search" type="search" placeholder="Anime ara..." autocomplete="off" aria-label="Anime ara" />
   </header>
 
-  <main>
-    <section id="homeView">
+  <main id="main">
+    <noscript><p class="empty">Bu site için JavaScript açık olmalı.</p></noscript>
+
+    <section id="homeView" aria-label="Ana sayfa">
       <div id="continueRow" class="row hidden">
         <h2 class="section">İzlemeye Devam Et</h2>
         <div id="continueGrid" class="grid"></div>
@@ -131,12 +59,12 @@
       <div class="row">
         <h2 class="section">Tüm Animeler</h2>
         <div id="animeGrid" class="grid"></div>
-        <div id="emptyState" class="empty hidden">Henüz anime eklenmemiş.</div>
+        <div id="emptyState" class="empty" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div>Animeler yükleniyor...</div>
       </div>
     </section>
 
-    <section id="watchView" class="hidden">
-      <div style="margin-bottom: 14px;"><a class="btn" href="#/" style="text-decoration:none;display:inline-block">← Geri Dön</a></div>
+    <section id="watchView" class="hidden" aria-label="Bölüm izle">
+      <div class="back"><a class="btn" href="#/">← Geri Dön</a></div>
       <div class="watch-wrap">
         <div>
           <div class="player-box" id="playerBox"></div>
@@ -153,8 +81,8 @@
           </div>
           <div id="dlBar" class="dl-bar"></div>
         </div>
-        <aside class="ep-panel">
-          <h3>Bölümler</h3>
+        <aside class="ep-panel" aria-label="Bölümler">
+          <h2>Bölümler</h2>
           <div id="seasonTabs" class="tabs"></div>
           <div id="epList" class="ep-list"></div>
         </aside>
@@ -162,559 +90,18 @@
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.min.js"></script>
+  <footer>
+    <div><strong>mes-anime</strong> · Türkçe altyazılı anime</div>
+    <div class="kisayollar">Kısayollar: <kbd>Boşluk</kbd> oynat/durdur · <kbd>←</kbd><kbd>→</kbd> 10 sn · <kbd>F</kbd> tam ekran · <kbd>C</kbd> altyazı · <kbd>Shift</kbd>+<kbd>N</kbd>/<kbd>P</kbd> sonraki/önceki bölüm</div>
+  </footer>
+
+  <!-- Video şifre anahtarı: deploy.yml yayınlarken GitHub secret'ı ile doldurur.
+       Bu satırın biçimini değiştirme: mes.py anahtar ve resize.py anahtarı buradan okur. -->
   <script>
     const SECRET_KEY = "__VIDEO_SECRET_KEY__";
-    const LANG_LABELS = { tr: "Türkçe", en: "İngilizce", jp: "Japonca", ja: "Japonca" };
-    let AES_KEY_BUF = null;
-    let ANIMES = [];
-    let hls = null, player = null, blobUrls = [];
-    let current = null; // { anime, index }
-
-    /* ---------- yardımcılar ---------- */
-    const $ = id => document.getElementById(id);
-    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-    const store = {
-      get(k, d) { try { const v = localStorage.getItem("ma:" + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
-      set(k, v) { try { localStorage.setItem("ma:" + k, JSON.stringify(v)); } catch {} }
-    };
-    const progKey = (a, e) => `p:${a.id}:${e.id}`;
-    const getProg = (a, e) => store.get(progKey(a, e), null);
-    const pct = p => p && p.d ? Math.min(100, Math.round(p.t / p.d * 100)) : 0;
-    const seasonOf = ep => { const m = /^s(\d+)-/i.exec(ep.id || ""); return m ? +m[1] : 1; };
-    const hasTr = a => a.episodes.some(e => (e.subtitles || []).some(s => s.lang === "tr"));
-
-    async function initKey() {
-      const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(SECRET_KEY));
-      AES_KEY_BUF = hash.slice(0, 16);
-    }
-
-    // HLS.js özel yükleyici: "enc.key" isteğini ağa çıkmadan bellekten verir
-    class KeyInterceptLoader extends Hls.DefaultConfig.loader {
-      load(context, config, callbacks) {
-        if (context.url && /enc\.key(\?|$)/.test(context.url)) {
-          const now = performance.now();
-          const stats = this.stats || {};
-          Object.assign(stats, { loaded: 16, total: 16, trequest: now, tfirst: now, tload: now,
-            loading: { start: now, first: now, end: now }, parsing: { start: now, end: now } });
-          setTimeout(() => callbacks.onSuccess({ url: context.url, data: AES_KEY_BUF.slice(0) }, stats, context, null), 0);
-          return;
-        }
-        super.load(context, config, callbacks);
-      }
-    }
-
-    /* ---------- anime listesi: data/depolar.txt -> her deponun mes.anime dosyası ---------- */
-
-    // "mesflit/opm" veya "mesflit/opm@dal" -> mes.anime'yi okuyup sitenin kullandığı biçime çevirir
-    async function loadRepo(line) {
-      const [repo, branch = "main"] = line.split("@");
-      const base = `https://raw.githubusercontent.com/${repo}/${branch}`;
-      const res = await fetch(`${base}/mes.anime?t=${Date.now()}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`${repo}: mes.anime bulunamadı (${res.status})`);
-      const m = await res.json();
-      const url = p => !p ? "" : /^https?:\/\//.test(p) ? p : `${base}/${p.replace(/^\/+/, "")}`;
-      return {
-        id: m.id || repo.split("/").pop(),
-        title: m.title || repo,
-        category: m.category || "Anime",
-        poster: url(m.poster),
-        episodes: (m.episodes || []).filter(e => e && e.path).map(e => {
-          const dir = `${base}/${e.path.replace(/^\/+|\/+$/g, "")}`;
-          return {
-            id: e.id || e.path.replace(/^\/+|\/+$/g, "").replace(/\//g, "-"),
-            title: e.title || e.path,
-            m3u8: `${dir}/index.m3u8`,
-            bandwidth: e.bandwidth, resolution: e.resolution,
-            variants: (e.variants || []).filter(v => v && v.path).map(v => ({
-              name: v.name, bandwidth: v.bandwidth, resolution: v.resolution,
-              m3u8: `${dir}/${v.path.replace(/^\/+|\/+$/g, "")}/index.m3u8`
-            })),
-            subtitles: (e.subtitles || []).map(s => typeof s === "string"
-              ? { lang: s, label: LANG_LABELS[s] || s.toUpperCase(), src: `${dir}/${s}.vtt` }
-              : { ...s, src: url(s.src) })
-          };
-        })
-      };
-    }
-
-    async function loadAnimes() {
-      let lines = [];
-      try {
-        const res = await fetch("data/depolar.txt?t=" + Date.now(), { cache: "no-store" });
-        lines = (await res.text()).split(/\r?\n/).map(l => l.replace(/#.*/, "").trim()).filter(Boolean);
-      } catch {}
-      const results = await Promise.allSettled(lines.map(loadRepo));
-      results.forEach(r => r.status === "rejected" && console.warn(r.reason));
-      return results.filter(r => r.status === "fulfilled").map(r => r.value);
-    }
-
-    /* ---------- açılış ---------- */
-    async function boot() {
-      await initKey();
-      ANIMES = await loadAnimes();
-      $("search").addEventListener("input", () => { if (location.hash.length > 2) location.hash = "#/"; renderHome(); });
-      $("autoNext").checked = store.get("autoNext", true);
-      $("autoNext").onchange = e => store.set("autoNext", e.target.checked);
-      document.addEventListener("keydown", onKey);
-      window.addEventListener("hashchange", route);
-      route();
-    }
-
-    function route() {
-      const parts = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
-      if (parts[0] === "izle" && parts[1]) {
-        const anime = ANIMES.find(a => a.id === parts[1]);
-        if (anime && anime.episodes.length) {
-          let idx = anime.episodes.findIndex(e => e.id === parts[2]);
-          if (idx < 0) idx = Math.max(0, anime.episodes.findIndex(e => e.id === store.get("last:" + anime.id, null)));
-          return openEpisode(anime, idx);
-        }
-      }
-      showHome();
-    }
-
-    const go = (anime, idx) => { location.hash = `#/izle/${encodeURIComponent(anime.id)}/${encodeURIComponent(anime.episodes[idx].id)}`; };
-
-    /* ---------- ana sayfa ---------- */
-    function showHome() {
-      teardown();
-      current = null;
-      document.title = "mes-anime";
-      $("watchView").classList.add("hidden");
-      $("homeView").classList.remove("hidden");
-      renderHome();
-    }
-
-    function renderHome() {
-      const q = $("search").value.toLocaleLowerCase("tr").trim();
-      const list = ANIMES.filter(a => (a.title + " " + (a.category || "")).toLocaleLowerCase("tr").includes(q));
-      const grid = $("animeGrid");
-      grid.innerHTML = "";
-      $("emptyState").textContent = ANIMES.length ? "Sonuç bulunamadı." : "Henüz anime eklenmemiş.";
-      $("emptyState").classList.toggle("hidden", list.length > 0);
-      list.forEach(anime => {
-        const card = document.createElement("button");
-        card.className = "card";
-        card.onclick = () => go(anime, Math.max(0, anime.episodes.findIndex(e => e.id === store.get("last:" + anime.id, null))));
-        const seasons = new Set(anime.episodes.map(seasonOf)).size;
-        card.innerHTML = `
-          <div class="poster" ${anime.poster ? `style="background-image:url('${esc(anime.poster)}')"` : ""}>
-            ${anime.poster ? "" : esc(anime.title)}
-            ${hasTr(anime) ? `<span class="badge tr">TR Altyazı</span>` : ""}
-            <span class="badge">${anime.episodes.length} Bölüm</span>
-          </div>
-          <div class="card-body">
-            <div class="card-title">${esc(anime.title)}</div>
-            <div class="card-meta">${esc(anime.category || "Anime")}${seasons > 1 ? ` · ${seasons} Sezon` : ""}</div>
-          </div>`;
-        grid.appendChild(card);
-      });
-      renderContinue(q);
-    }
-
-    function renderContinue(q) {
-      const items = [];
-      ANIMES.forEach(a => {
-        const lastId = store.get("last:" + a.id, null);
-        const idx = a.episodes.findIndex(e => e.id === lastId);
-        if (idx < 0) return;
-        const p = getProg(a, a.episodes[idx]);
-        items.push({ a, idx, p, at: (p && p.at) || 0 });
-      });
-      items.sort((x, y) => y.at - x.at);
-      const grid = $("continueGrid");
-      grid.innerHTML = "";
-      $("continueRow").classList.toggle("hidden", !items.length || !!q);
-      items.forEach(({ a, idx, p }) => {
-        const ep = a.episodes[idx];
-        const card = document.createElement("button");
-        card.className = "card";
-        card.onclick = () => go(a, idx);
-        card.innerHTML = `
-          <div class="poster wide" ${a.poster ? `style="background-image:url('${esc(a.poster)}')"` : ""}>
-            <span class="badge">▶ Devam</span>
-          </div>
-          <div class="bar"><i style="width:${pct(p)}%"></i></div>
-          <div class="card-body">
-            <div class="card-title">${esc(a.title)}</div>
-            <div class="card-meta">${esc(ep.title)}</div>
-          </div>`;
-        grid.appendChild(card);
-      });
-    }
-
-    /* ---------- izleme ---------- */
-    function openEpisode(anime, epIndex) {
-      $("homeView").classList.add("hidden");
-      $("watchView").classList.remove("hidden");
-      current = { anime, index: epIndex };
-      const ep = anime.episodes[epIndex];
-      store.set("last:" + anime.id, ep.id);
-      document.title = `${anime.title} — ${ep.title} | mes-anime`;
-      $("watchTitle").textContent = `${anime.title} — ${ep.title}`;
-      const langs = (ep.subtitles || []).map(s => s.label || LANG_LABELS[s.lang] || s.lang);
-      $("watchSub").textContent = [anime.category, langs.length ? "Altyazı: " + langs.join(", ") : "Altyazı yok"].filter(Boolean).join(" · ");
-
-      $("prevBtn").disabled = epIndex <= 0;
-      $("nextBtn").disabled = epIndex >= anime.episodes.length - 1;
-      $("prevBtn").onclick = () => epIndex > 0 && go(anime, epIndex - 1);
-      $("nextBtn").onclick = () => epIndex < anime.episodes.length - 1 && go(anime, epIndex + 1);
-
-      renderEpisodes(anime, epIndex, seasonOf(ep));
-      renderDl();
-      loadVideo(anime, ep);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function renderEpisodes(anime, epIndex, season) {
-      const seasons = [...new Set(anime.episodes.map(seasonOf))].sort((a, b) => a - b);
-      const tabs = $("seasonTabs");
-      tabs.innerHTML = "";
-      tabs.classList.toggle("hidden", seasons.length < 2);
-      seasons.forEach(s => {
-        const t = document.createElement("button");
-        t.className = "tab" + (s === season ? " active" : "");
-        t.textContent = `${s}. Sezon`;
-        t.onclick = () => renderEpisodes(anime, epIndex, s);
-        tabs.appendChild(t);
-      });
-      const list = $("epList");
-      list.innerHTML = "";
-      anime.episodes.forEach((e, i) => {
-        if (seasonOf(e) !== season) return;
-        const p = getProg(anime, e);
-        const b = document.createElement("button");
-        b.className = "ep-item" + (i === epIndex ? " active" : "") + (pct(p) >= 90 ? " done" : "");
-        const tr = (e.subtitles || []).some(s => s.lang === "tr");
-        b.innerHTML = `${esc(e.title)}${tr ? "<small>TR</small>" : ""}${pct(p) ? `<div class="bar"><i style="width:${pct(p)}%"></i></div>` : ""}`;
-        b.onclick = () => go(anime, i);
-        list.appendChild(b);
-        if (i === epIndex) setTimeout(() => b.scrollIntoView({ block: "nearest" }), 0);
-      });
-    }
-
-    function teardown() {
-      if (hls) { hls.destroy(); hls = null; }
-      if (player) { try { player.destroy(); } catch {} player = null; }
-      $("playerBox").innerHTML = "";
-      const old = blobUrls; blobUrls = [];
-      setTimeout(() => old.forEach(u => URL.revokeObjectURL(u)), 1000);
-    }
-
-    function showMsg(text) {
-      const m = document.createElement("div");
-      m.className = "player-msg";
-      m.textContent = text;
-      $("playerBox").appendChild(m);
-    }
-
-    // raw.githubusercontent.com VTT'yi "text/plain + nosniff" ile sunar; bazı tarayıcılar
-    // bunu <track> olarak reddeder. Dosyayı çekip text/vtt Blob'u olarak veriyoruz.
-    async function subtitleUrl(src) {
-      try {
-        const r = await fetch(src, { cache: "no-cache" });
-        if (!r.ok) throw 0;
-        const u = URL.createObjectURL(new Blob([await r.text()], { type: "text/vtt" }));
-        blobUrls.push(u);
-        return u;
-      } catch { return null; }
-    }
-
-    const heightOf = l => { const m = /x(\d+)$/.exec(l.resolution || "") || /(\d+)p$/.exec(l.name || ""); return m ? +m[1] : 0; };
-    function qualityLevels(ep) {
-      const all = [{ name: "orijinal", m3u8: ep.m3u8, bandwidth: ep.bandwidth, resolution: ep.resolution }, ...(ep.variants || [])];
-      return all.map(l => ({ ...l, height: heightOf(l) }));
-    }
-    function masterPlaylist(levels) {
-      const txt = "#EXTM3U\n" + levels.map(l =>
-        `#EXT-X-STREAM-INF:BANDWIDTH=${l.bandwidth || 5000000}${l.resolution ? ",RESOLUTION=" + l.resolution : ""}\n${l.m3u8}`
-      ).join("\n") + "\n";
-      const u = URL.createObjectURL(new Blob([txt], { type: "application/vnd.apple.mpegurl" }));
-      blobUrls.push(u);
-      return u;
-    }
-
-    async function loadVideo(anime, ep) {
-      teardown();
-      const token = {};
-      loadVideo.token = token;
-      const box = $("playerBox");
-
-      if (ep.embed_url) {
-        box.innerHTML = `<iframe src="${esc(ep.embed_url)}" allowfullscreen allow="autoplay; fullscreen; picture-in-picture"></iframe>`;
-        return;
-      }
-
-      const video = document.createElement("video");
-      video.setAttribute("playsinline", "");
-      video.setAttribute("controls", "");
-      video.crossOrigin = "anonymous";
-      box.appendChild(video);
-
-      // Altyazı tercihi: kullanıcı seçimi > Türkçe > ilk altyazı
-      const subs = ep.subtitles || [];
-      const pref = store.get("subLang", "tr");
-      const chosen = subs.find(s => s.lang === pref) || subs.find(s => s.lang === "tr") || subs[0];
-      const urls = await Promise.all(subs.map(s => subtitleUrl(s.src)));
-      if (loadVideo.token !== token) return;
-      subs.forEach((s, i) => {
-        if (!urls[i]) return;
-        const track = document.createElement("track");
-        track.kind = "captions";
-        track.label = s.label || LANG_LABELS[s.lang] || s.lang;
-        track.srclang = s.lang;
-        track.src = urls[i];
-        video.appendChild(track);
-      });
-
-      // Kaliteler: orijinal + mes.anime'deki düşük kopyalar (ör. 480p). Birden fazlaysa
-      // tarayıcıda bir "master playlist" üretilir; hls.js internet hızına göre kendisi seçer.
-      const levels = qualityLevels(ep);
-      const qOptions = levels.length > 1 ? [0, ...new Set(levels.map(l => l.height).filter(Boolean))] : [];
-      const qPref = qOptions.includes(store.get("quality", 0)) ? store.get("quality", 0) : 0;
-      const setQuality = q => {
-        store.set("quality", q);
-        if (!hls || !hls.levels || !hls.levels.length) return;
-        const i = q ? hls.levels.findIndex(l => l.height === q) : -1;
-        if (hls.currentLevel !== i || (i === -1 && !hls.autoLevelEnabled)) hls.currentLevel = i;
-      };
-
-      if (window.Hls && Hls.isSupported()) {
-        hls = new Hls({ loader: KeyInterceptLoader, maxBufferLength: 30 });
-        hls.on(Hls.Events.MANIFEST_PARSED, () => { if (qPref) setQuality(qPref); });
-        let mediaRetry = 0;
-        hls.on(Hls.Events.ERROR, (_, data) => {
-          if (!data.fatal) return;
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) { setTimeout(() => hls && hls.startLoad(), 1500); }
-          else if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRetry++ < 3) { hls.recoverMediaError(); }
-          else { showMsg("Video oynatılamadı. Lütfen sayfayı yenileyin."); }
-        });
-        hls.loadSource(levels.length > 1 ? masterPlaylist(levels) : ep.m3u8);
-        hls.attachMedia(video);
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = ep.m3u8;
-      } else {
-        showMsg("Tarayıcınız bu videoyu desteklemiyor.");
-      }
-
-      player = new Plyr(video, {
-        iconUrl: "https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.svg",
-        blankVideo: "",
-        captions: { active: !!chosen && pref !== "off", update: true, language: chosen ? chosen.lang : "auto" },
-        controls: ["play-large", "rewind", "play", "fast-forward", "progress", "current-time", "duration", "mute", "volume", "captions", "settings", "pip", "fullscreen"],
-        settings: ["captions", "quality", "speed"],
-        // Kalite menüsü sadece 480p kopyası olan bölümlerde. Yoksa "quality" hiç verilmemeli:
-        // undefined verilirse Plyr'ın varsayılan ayarı silinir ve oynatıcı çöker.
-        ...(qOptions.length && hls ? { quality: { default: qPref, options: qOptions, forced: true, onChange: setQuality } } : {}),
-        seekTime: 10,
-        keyboard: { focused: true, global: true },
-        i18n: {
-          restart: "Baştan başlat", rewind: "{seektime} sn geri", play: "Oynat", pause: "Duraklat",
-          fastForward: "{seektime} sn ileri", seek: "Ara", played: "Oynatıldı", buffered: "Yüklendi",
-          currentTime: "Geçen süre", duration: "Süre", volume: "Ses", mute: "Sessiz", unmute: "Sesi aç",
-          enableCaptions: "Altyazıyı aç", disableCaptions: "Altyazıyı kapat", enterFullscreen: "Tam ekran",
-          exitFullscreen: "Tam ekrandan çık", frameTitle: "Oynatıcı", captions: "Altyazı", settings: "Ayarlar",
-          speed: "Hız", normal: "Normal", quality: "Kalite", loop: "Döngü", start: "Başlangıç", end: "Bitiş",
-          all: "Tümü", reset: "Sıfırla", disabled: "Kapalı", enabled: "Açık", pip: "Resim içinde resim",
-          qualityLabel: { 0: "Otomatik" }
-        }
-      });
-
-      // Plyr kalite menüsünde kayıtlı seçimi işaretle (kendisi yapmıyor)
-      if (qOptions.length && hls) player.once("ready", () => { player.quality = qPref; });
-
-      // Kaldığın yerden devam
-      const saved = getProg(anime, ep);
-      player.once("loadedmetadata", () => {
-        if (saved && saved.t > 10 && pct(saved) < 95) player.currentTime = saved.t;
-      });
-      let lastSave = 0;
-      player.on("timeupdate", () => {
-        const t = player.currentTime, d = player.duration;
-        if (!d || Math.abs(t - lastSave) < 5) return;
-        lastSave = t;
-        store.set(progKey(anime, ep), { t, d, at: Date.now() });
-      });
-      // Aynı anda yalnızca seçili altyazı açık olsun. Telefonların yerel tam ekranında
-      // (iOS) tarayıcı altyazıyı kendisi çizer; orada "showing", Plyr'da "hidden" gerekir.
-      const nativeFs = () => !!(document.webkitFullscreenElement === video || video.webkitDisplayingFullscreen);
-      const syncTracks = () => {
-        const on = player.currentTrack >= 0 && player.captions && player.captions.active !== false && store.get("subLang", "tr") !== "off";
-        const lang = player.language;
-        [...video.textTracks].forEach(t => {
-          const want = on && t.language === lang ? (nativeFs() ? "showing" : "hidden") : "disabled";
-          if (t.mode !== want) t.mode = want;
-        });
-      };
-      ["languagechange", "captionsenabled", "captionsdisabled", "enterfullscreen", "exitfullscreen", "ready"].forEach(e => player.on(e, () => setTimeout(syncTracks, 0)));
-      video.addEventListener("webkitbeginfullscreen", () => setTimeout(syncTracks, 0));
-      video.addEventListener("webkitendfullscreen", () => setTimeout(syncTracks, 0));
-      video.textTracks.addEventListener("change", () => setTimeout(syncTracks, 0));
-      player.on("languagechange", () => store.set("subLang", player.language || "tr"));
-      player.on("captionsdisabled", () => store.set("subLang", "off"));
-      player.on("captionsenabled", () => { if (store.get("subLang", "tr") === "off") store.set("subLang", player.language || "tr"); });
-      player.on("ended", () => {
-        const d = player.duration;
-        store.set(progKey(anime, ep), { t: d, d, at: Date.now() });
-        if ($("autoNext").checked && current && current.index < anime.episodes.length - 1) go(anime, current.index + 1);
-      });
-    }
-
-    /* ---------- indirme ----------
-       Şifreli parçaları indirip tarayıcıda çözer ve tek dosya yapar.
-       mux.js ile MP4'e çevirir (her telefonda açılır); olmazsa .ts verir (VLC açar).
-       Altyazılar ayrıca .srt olarak indirilir. Aynı anda tek bölüm indirilir. */
-    const MUX_JS = "https://cdn.jsdelivr.net/npm/mux.js@7.0.3/dist/mux.min.js";
-    const PARALEL = 6;
-    let dl = null; // { key, title, pct, ctrl, text }
-
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
-    const fileName = s => s.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
-    function saveBlob(blob, name) {
-      const u = URL.createObjectURL(blob);
-      const a = Object.assign(document.createElement("a"), { href: u, download: name });
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(u), 60000);
-    }
-    function loadScript(src) {
-      return new Promise((ok, no) => {
-        if (window.muxjs) return ok();
-        const s = Object.assign(document.createElement("script"), { src, onload: ok, onerror: () => no(new Error("mux.js yüklenemedi")) });
-        document.head.appendChild(s);
-      });
-    }
-
-    // HLS oynatma listesini parçalara ayırır: [{ url, iv }] (iv null = şifresiz)
-    function parsePlaylist(text, base) {
-      const segs = []; let key = null, seq = 0;
-      for (const raw of text.split(/\r?\n/)) {
-        const l = raw.trim();
-        if (!l) continue;
-        if (l.startsWith("#EXT-X-MEDIA-SEQUENCE:")) seq = parseInt(l.slice(22)) || 0;
-        else if (l.startsWith("#EXT-X-KEY:")) {
-          const m = /METHOD=([^,]+)/.exec(l), iv = /IV=0x([0-9a-f]+)/i.exec(l);
-          key = m && m[1] !== "NONE" ? { iv: iv ? iv[1].padStart(32, "0") : null } : null;
-        } else if (!l.startsWith("#")) {
-          let iv = null;
-          if (key) {
-            iv = new Uint8Array(16);
-            if (key.iv) key.iv.match(/../g).forEach((h, i) => iv[i] = parseInt(h, 16));
-            else new DataView(iv.buffer).setUint32(12, seq);   // IV yoksa sıra numarası
-          }
-          segs.push({ url: new URL(l, base).href, iv }); seq++;
-        }
-      }
-      return segs;
-    }
-
-    async function downloadEpisode(anime, ep, src = ep.m3u8, suffix = "") {
-      if (dl) return;
-      const ctrl = new AbortController(), signal = ctrl.signal;
-      dl = { key: anime.id + "/" + ep.id, title: ep.title, pct: 0, ctrl, text: "Hazırlanıyor..." };
-      renderDl();
-      const name = fileName(`${anime.title} - ${ep.title}${suffix}`);
-      try {
-        const segs = parsePlaylist(await (await fetch(src, { signal })).text(), src);
-        if (!segs.length) throw new Error("Bölüm listesi boş");
-        const aes = await crypto.subtle.importKey("raw", AES_KEY_BUF, "AES-CBC", false, ["decrypt"]);
-        const get = async s => {
-          for (let i = 0; ; i++) {
-            try {
-              const r = await fetch(s.url, { signal });
-              if (!r.ok) throw new Error("HTTP " + r.status);
-              let b = await r.arrayBuffer();
-              if (s.iv) b = await crypto.subtle.decrypt({ name: "AES-CBC", iv: s.iv }, aes, b);
-              return new Uint8Array(b);
-            } catch (e) { if (signal.aborted || i >= 3) throw e; await sleep(1500 * (i + 1)); }
-          }
-        };
-
-        let mux = null, mp4 = [], ts = [];
-        try {
-          await loadScript(MUX_JS);
-          mux = new muxjs.mp4.Transmuxer({ remux: true });
-          mux.on("data", d => { if (!mp4.length) mp4.push(new Blob([d.initSegment])); mp4.push(new Blob([d.data])); });
-        } catch { mux = null; }
-
-        let done = 0;
-        for (let i = 0; i < segs.length; i += PARALEL) {
-          const batch = await Promise.all(segs.slice(i, i + PARALEL).map(get));
-          for (const b of batch) {
-            if (mux) {
-              mux.push(b); mux.flush();
-              if (done === 0 && !mp4.length) { mux = null; }   // MP4'e çevrilemedi -> .ts
-            }
-            if (!mux) ts.push(new Blob([b]));
-            done++;
-          }
-          dl.pct = Math.round(done / segs.length * 100);
-          dl.text = `İndiriliyor %${dl.pct}`;
-          renderDl();
-        }
-        if (mux && mp4.length) saveBlob(new Blob(mp4, { type: "video/mp4" }), name + ".mp4");
-        else saveBlob(new Blob(ts, { type: "video/mp2t" }), name + ".ts");
-        dl = null; renderDl();
-      } catch (e) {
-        const cancelled = signal.aborted;
-        dl = null; renderDl();
-        if (!cancelled) alert("İndirme başarısız: " + (e.message || e));
-      }
-    }
-
-    function vttToSrt(vtt) {
-      const fix = t => { t = t.replace(".", ","); return t.split(":").length === 2 ? "00:" + t : t; };
-      let n = 0;
-      return vtt.replace(/\r/g, "").split(/\n\s*\n/).map(b => {
-        const lines = b.split("\n");
-        const i = lines.findIndex(l => l.includes("-->"));
-        const m = i < 0 ? null : /([\d:.]+)\s+-->\s+([\d:.]+)/.exec(lines[i]);
-        return m ? `${++n}\n${fix(m[1])} --> ${fix(m[2])}\n${lines.slice(i + 1).join("\n")}` : null;
-      }).filter(Boolean).join("\n\n") + "\n";
-    }
-
-    async function downloadSub(anime, ep, s) {
-      try {
-        const r = await fetch(s.src, { cache: "no-cache" });
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        const label = s.label || LANG_LABELS[s.lang] || s.lang;
-        saveBlob(new Blob([vttToSrt(await r.text())], { type: "application/x-subrip" }),
-                 fileName(`${anime.title} - ${ep.title}.${s.lang}`) + ".srt");
-      } catch (e) { alert("Altyazı indirilemedi: " + (e.message || e)); }
-    }
-
-    function renderDl() {
-      const bar = $("dlBar");
-      if (!bar || !current) return;
-      const { anime } = current, ep = anime.episodes[current.index];
-      bar.innerHTML = "";
-      const btn = (text, cls, fn) => {
-        const b = document.createElement("button");
-        b.className = "btn" + (cls ? " " + cls : ""); b.textContent = text; b.onclick = fn;
-        bar.appendChild(b); return b;
-      };
-      if (dl && dl.key === anime.id + "/" + ep.id) {
-        btn("✕ İptal", "", () => dl && dl.ctrl.abort());
-        bar.insertAdjacentHTML("beforeend", `<div class="dl-prog"><i style="width:${dl.pct}%"></i></div><span class="dl-note">${esc(dl.text)}</span>`);
-      } else if (dl) {
-        btn("⬇ Bölümü indir", "", null).disabled = true;
-        bar.insertAdjacentHTML("beforeend", `<span class="dl-note">Başka bölüm iniyor (${esc(dl.title)}, %${dl.pct})</span>`);
-      } else {
-        const h = heightOf(ep);
-        btn(`⬇ Bölümü indir${h ? ` (${h}p)` : " (MP4)"}`, "", () => downloadEpisode(anime, ep));
-        (ep.variants || []).forEach(v => btn(`⬇ ${v.name} (küçük dosya)`, "", () => downloadEpisode(anime, ep, v.m3u8, ` (${v.name})`)));
-      }
-      (ep.subtitles || []).forEach(s => btn(`⬇ ${s.label || LANG_LABELS[s.lang] || s.lang} altyazı`, "", () => downloadSub(anime, ep, s)));
-    }
-
-    function onKey(e) {
-      if (!current || /input|textarea/i.test(e.target.tagName)) return;
-      if (e.shiftKey && e.key === "N") $("nextBtn").click();
-      if (e.shiftKey && e.key === "P") $("prevBtn").click();
-    }
-
-    boot();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.min.js"></script>
+  <script type="module" src="assets/js/uygulama.js?v=__SURUM__"></script>
 </body>
 </html>
