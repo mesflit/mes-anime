@@ -87,57 +87,26 @@ def pack_hls(args):
         subtitles = [s for s in subtitles if s["lang"] != "tr"]
         subtitles.insert(0, {"lang": "tr", "label": "Türkçe", "src": f"{base_url}/tr.vtt"})
 
-    # 4. data/animes.json güncelle (Anime bazlı gruplu yapı)
-    db_path = Path("data/animes.json")
-    db_path.parent.mkdir(exist_ok=True)
-    db = []
-    if db_path.exists():
-        try:
-            loaded = json.loads(db_path.read_text(encoding="utf-8"))
-            if isinstance(loaded, list) and (not loaded or "episodes" in loaded[0]):
-                db = loaded
-        except Exception:
-            db = []
+    # 4. Deponun mes.anime dosyasını güncelle (site bölümleri buradan okur)
+    import mesanime  # noqa: E402
+    mesanime.update(Path("..") / args.repo, args.anime, args.category, args.poster)
+    ep_obj = next(e for e in json.loads((Path("..") / args.repo / mesanime.FILE).read_text(encoding="utf-8"))["episodes"]
+                  if e["path"] == args.ep_path.strip("/"))
+    if args.title and ep_obj["title"] != args.title:
+        mesanime.set_title(Path("..") / args.repo, ep_obj["path"], args.title)
 
-    anime = next((a for a in db if a["id"] == args.repo), None)
-    if not anime:
-        anime = {
-            "id": args.repo,
-            "title": args.anime,
-            "category": args.category,
-            "poster": args.poster or "",
-            "episodes": []
-        }
-        db.append(anime)
-    elif args.poster:
-        anime["poster"] = args.poster
-
-    ep_id = args.ep_path.replace("/", "-")
-    ep_obj = {
-        "id": ep_id,
-        "title": args.title,
-        "m3u8": f"{base_url}/index.m3u8",
-        "subtitles": subtitles
-    }
-    idx = next((i for i, e in enumerate(anime["episodes"]) if e["id"] == ep_id), None)
-    if idx is None:
-        anime["episodes"].append(ep_obj)
-    else:
-        anime["episodes"][idx] = ep_obj  # sırayı bozmadan güncelle
-
-    db_path.write_text(json.dumps(db, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"✅ Tamamlandı: {out_dir} ({len(subtitles)} altyazı)")
-    print(f"➡️  Yayınla: cd ../{args.repo} && git add --sparse -A && git commit -m 'feat: {args.title}' && git push")
+    print(f"➡️  Yayınla: cd ../{args.repo} && git add --sparse -A && git commit -m 'feat: {args.ep_path}' && git push")
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("input", help="Kaynak .mkv veya .mp4 dosyası")
     p.add_argument("repo", help="GitHub video depo adı (örn: opm)")
     p.add_argument("ep_path", help="Depo içi bölüm klasörü (örn: s1/ep1)")
-    p.add_argument("--anime", required=True, help="Anime adı (örn: One Punch Man)")
-    p.add_argument("--title", required=True, help="Bölüm başlığı (örn: S1 B1)")
-    p.add_argument("--category", default="Aksiyon")
-    p.add_argument("--poster", default="", help="Kapak görseli URL")
+    p.add_argument("--anime", help="Anime adı (sadece ilk bölümde gerekli, sonra mes.anime'de kalır)")
+    p.add_argument("--title", help="Bölüm başlığı (boşsa: N. Sezon M. Bölüm)")
+    p.add_argument("--category", help="Kategori (örn: Aksiyon)")
+    p.add_argument("--poster", help="Kapak: yerel dosya, depodaki dosya adı veya URL")
     p.add_argument("--lang", default="jpn", help="Ses dili (jpn veya 0)")
     p.add_argument("--preset", default="veryfast", help="FFmpeg preset (ultrafast/veryfast)")
     p.add_argument("--sub", action="append", help="Harici altyazı (örn: tr:altyazi.srt)")

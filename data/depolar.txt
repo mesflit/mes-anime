@@ -1,0 +1,4 @@
+# Sitede görünecek anime depoları (her satıra bir tane).
+# Her deponun kökünde mes.anime dosyası olmalı: python3 scripts/mesanime.py <depo>
+# Farklı dal için: kullanici/depo@dal
+mesflit/opm

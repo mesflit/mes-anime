@@ -9,7 +9,7 @@ Kullanım (video deposu ../opm gibi mes-anime'nin yanında klonlu olmalı):
   # en.vtt -> tr.vtt makine çevirisi (pip install deep-translator)
   python3 scripts/altyazi.py cevir opm
 
-  # Depodaki tüm *.vtt dosyalarını data/animes.json'a kaydet
+  # Depodaki tüm *.vtt dosyalarını mes.anime'ye kaydet
   python3 scripts/altyazi.py kaydet opm
 """
 import argparse, json, re, sys, time
@@ -20,7 +20,6 @@ import subs  # noqa: E402
 
 LABELS = {"tr": "Türkçe", "en": "İngilizce", "jp": "Japonca", "ja": "Japonca"}
 ORDER = {"tr": 0, "en": 1}
-DB = Path("data/animes.json")
 
 
 def ep_dirs(repo_dir: Path):
@@ -72,20 +71,8 @@ def cmd_cevir(a):
 
 
 def cmd_kaydet(a):
-    db = json.loads(DB.read_text(encoding="utf-8"))
-    anime = next((x for x in db if x["id"] == a.repo), None)
-    if not anime:
-        sys.exit(f"HATA: animes.json içinde '{a.repo}' yok")
-    repo_dir = Path("..") / a.repo
-    for ep in anime["episodes"]:
-        ep_path = ep["id"].replace("-", "/", 1)
-        base = ep["m3u8"].rsplit("/", 1)[0]
-        found = sorted((repo_dir / ep_path).glob("*.vtt"), key=lambda f: ORDER.get(f.stem, 9))
-        if not found:
-            continue
-        ep["subtitles"] = [{"lang": f.stem, "label": LABELS.get(f.stem, f.stem.upper()), "src": f"{base}/{f.name}"} for f in found]
-        print(f"📝 {ep['id']}: {', '.join(f.stem for f in found)}")
-    DB.write_text(json.dumps(db, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    import mesanime  # noqa: E402
+    mesanime.update(Path("..") / a.repo)
 
 
 if __name__ == "__main__":

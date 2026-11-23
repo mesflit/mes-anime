@@ -199,14 +199,51 @@
       }
     }
 
+    /* ---------- anime listesi: data/depolar.txt -> her deponun mes.anime dosyası ---------- */
+    const LANG_NAMES = { tr: "Türkçe", en: "İngilizce", jp: "Japonca", ja: "Japonca" };
+
+    // "mesflit/opm" veya "mesflit/opm@dal" -> mes.anime'yi okuyup sitenin kullandığı biçime çevirir
+    async function loadRepo(line) {
+      const [repo, branch = "main"] = line.split("@");
+      const base = `https://raw.githubusercontent.com/${repo}/${branch}`;
+      const res = await fetch(`${base}/mes.anime?t=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`${repo}: mes.anime bulunamadı (${res.status})`);
+      const m = await res.json();
+      const url = p => !p ? "" : /^https?:\/\//.test(p) ? p : `${base}/${p.replace(/^\/+/, "")}`;
+      return {
+        id: m.id || repo.split("/").pop(),
+        title: m.title || repo,
+        category: m.category || "Anime",
+        poster: url(m.poster),
+        episodes: (m.episodes || []).filter(e => e && e.path).map(e => {
+          const dir = `${base}/${e.path.replace(/^\/+|\/+$/g, "")}`;
+          return {
+            id: e.id || e.path.replace(/^\/+|\/+$/g, "").replace(/\//g, "-"),
+            title: e.title || e.path,
+            m3u8: `${dir}/index.m3u8`,
+            subtitles: (e.subtitles || []).map(s => typeof s === "string"
+              ? { lang: s, label: LANG_NAMES[s] || s.toUpperCase(), src: `${dir}/${s}.vtt` }
+              : { ...s, src: url(s.src) })
+          };
+        })
+      };
+    }
+
+    async function loadAnimes() {
+      let lines = [];
+      try {
+        const res = await fetch("data/depolar.txt?t=" + Date.now(), { cache: "no-store" });
+        lines = (await res.text()).split(/\r?\n/).map(l => l.replace(/#.*/, "").trim()).filter(Boolean);
+      } catch {}
+      const results = await Promise.allSettled(lines.map(loadRepo));
+      results.forEach(r => r.status === "rejected" && console.warn(r.reason));
+      return results.filter(r => r.status === "fulfilled").map(r => r.value);
+    }
+
     /* ---------- açılış ---------- */
     async function boot() {
       await initKey();
-      try {
-        const res = await fetch("data/animes.json?t=" + Date.now());
-        ANIMES = await res.json();
-        if (!Array.isArray(ANIMES)) ANIMES = [];
-      } catch { ANIMES = []; }
+      ANIMES = await loadAnimes();
       $("search").addEventListener("input", () => { if (location.hash.length > 2) location.hash = "#/"; renderHome(); });
       $("autoNext").checked = store.get("autoNext", true);
       $("autoNext").onchange = e => store.set("autoNext", e.target.checked);
