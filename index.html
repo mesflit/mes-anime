@@ -505,7 +505,9 @@
         captions: { active: !!chosen && pref !== "off", update: true, language: chosen ? chosen.lang : "auto" },
         controls: ["play-large", "rewind", "play", "fast-forward", "progress", "current-time", "duration", "mute", "volume", "captions", "settings", "pip", "fullscreen"],
         settings: ["captions", "quality", "speed"],
-        quality: qOptions.length && hls ? { default: qPref, options: qOptions, forced: true, onChange: setQuality } : undefined,
+        // Kalite menüsü sadece 480p kopyası olan bölümlerde. Yoksa "quality" hiç verilmemeli:
+        // undefined verilirse Plyr'ın varsayılan ayarı silinir ve oynatıcı çöker.
+        ...(qOptions.length && hls ? { quality: { default: qPref, options: qOptions, forced: true, onChange: setQuality } } : {}),
         seekTime: 10,
         keyboard: { focused: true, global: true },
         i18n: {
