@@ -41,9 +41,6 @@ Sitenin geri kalanı yalnızca bu iç biçimi bilir.
   GitHub secret'ı + yayındaki sayfa.
 - `mes.anime` biçimi: README'deki tabloya bak. Betikler var olan `title` ve bilinmeyen
   alanları korur; bunu bozma (kullanıcı başlıkları elle düzenler).
-- Kalite: site `variants` varsa `masterPlaylist()` ile blob: master playlist üretir; Plyr `quality` (forced) menüsü
-  `hls.currentLevel`'i değiştirir, seçim `ma:quality`. Orijinal `index.m3u8` ve parçaları asla değiştirme;
-  kopyalar sadece `<bölüm>/<N>p/` altına yazılır.
 - `araclar/katalog.py` (`yaz`) her bölümü tek satıra yazar (okunabilir diff için). Biçim JSON kalmalı.
 
 ## Dosyalar
@@ -57,10 +54,8 @@ Sitenin geri kalanı yalnızca bu iç biçimi bilir.
 | `araclar/video.py` | `hls_yap()`: ffprobe ile ses seçimi (jpn öncelikli), ffmpeg ile 6 sn'lik AES-128 HLS |
 | `araclar/altyazi.py` | VTT `oku/yaz/temizle`, `cikar()` (metin altyazı, eng öncelikli; resimse .sup), `cevir()` (deep-translator, başarısızsa RuntimeError, sahte tr.vtt yazmaz), `hazirla()` |
 | `araclar/katalog.py` | `mes.anime`: `oku/yaz/guncelle`, `bolumler()`, `sonraki_bolum()` |
-| `araclar/kalite.py` | `varyant_yap()`: orijinal parçaları (diskte yoksa raw URL'den) geçici klasöre toplar, `enc.key` yazar, ffmpeg `-allowed_extensions ALL` ile çözüp 480p'ye küçültür ve aynı anahtar/IV düzeniyle `<bölüm>/480p/`'ye şifreler. Orijinallere yazmaz. `kaydet()` mes.anime'ye `variants`/`bandwidth`/`resolution` yazar |
 | `araclar/depo.py` | `klonla()` (blob:none + sparse `!*.ts`, boş depoyu da açar), `gonder()` (add --sparse, commit, push, sparse reapply), `olustur()` (gh), `siteye_ekle()` |
 | `.github/workflows/deploy.yml` | `master`/`main` push -> anahtar enjekte -> Pages |
-| `.github/workflows/kalite.yml` | workflow_dispatch: `mes.py kalite`; video depolarına `VIDEO_REPO_TOKEN` ile (git insteadOf) yazar |
 | `scripts/pipeline.py`, `auto_fansub.yml` | ESKİ, kullanılmıyor (Doodstream, eski `animes.json`). Kullanıcı istemedikçe dokunma |
 
 `mes.py` mes-anime kökünden çalıştırılır ve video deposunu `../<depo>` olarak bekler

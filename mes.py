@@ -11,7 +11,6 @@
 
   Diğer:
     python3 mes.py anahtar               # şifre anahtarını siteden alıp bu cihaza kaydet
-    python3 mes.py kalite opm            # bölümlere 480p kopya ekle (ağır iş: GitHub Actions'ta çalışır)
     python3 mes.py guncelle opm          # klasörlere bakıp mes.anime'yi yenile ve gönder
     python3 mes.py klonla opm            # depoyu videolar olmadan ../opm'a indir
     python3 mes.py altyazi temizle opm   # tüm .vtt'leri temizle
@@ -25,7 +24,7 @@ import re
 import sys
 from pathlib import Path
 
-from araclar import altyazi, depo, katalog, kalite, video
+from araclar import altyazi, depo, katalog, video
 from araclar import ayar
 from araclar.ayar import VIDEO_UZANTILARI, gizli_anahtar, hata
 
@@ -83,8 +82,6 @@ def k_ekle(a):
             depo.gonder(yol, f"feat: S{a.sezon} B{no}")
         no += 1
 
-    if a.gonder:
-        depo.kaliteyi_baslat(a.depo)
     if not depo.sitede_mi(a.depo):
         print(f"\n⚠️  {a.depo} sitede listelenmiyor. Eklemek için: python3 mes.py yeni {a.depo} \"Ad\"")
     print("\n🎉 Bitti." + (" Birkaç dakika içinde sitede görünür." if a.gonder else " (gönderilmedi)"))
@@ -99,25 +96,6 @@ def k_guncelle(a):
 
 def k_klonla(a):
     depo.klonla(a.depo)
-
-
-def k_kalite(a):
-    gizli_anahtar()
-    depolar = a.depo or depo.sitedeki_depolar()
-    kalan = a.sinir
-    for ad in depolar:
-        yol = depo.hazirla(ad)
-        eksik = kalite.eksik_bolumler(yol, a.yukseklik)
-        print(f"🎞️  {ad}: {len(eksik)} bölümde {a.yukseklik}p yok")
-        for bolum in eksik[:kalan]:
-            sonuc = kalite.varyant_yap(yol, bolum, a.yukseklik, a.hiz)
-            kalite.kaydet(yol, bolum, sonuc)
-            if a.gonder:
-                depo.gonder(yol, f"feat: {bolum} {a.yukseklik}p")
-            kalan -= 1
-        if kalan <= 0:
-            print(f"⏸️  Sınıra ({a.sinir}) ulaşıldı; kalanlar için tekrar çalıştır.")
-            break
 
 
 def k_anahtar(a):
@@ -188,12 +166,6 @@ def main():
 
     k = komut("klonla", k_klonla, "depoyu videolar olmadan ../<depo>'ya indir")
     k.add_argument("depo")
-
-    k = komut("kalite", k_kalite, "bölümlere düşük kaliteli kopya ekle (orijinallere dokunmaz)")
-    k.add_argument("depo", nargs="*", help="depolar (boş: sitedeki hepsi)")
-    k.add_argument("--yukseklik", type=int, default=480, help="kalite (varsayılan 480)")
-    k.add_argument("--sinir", type=int, default=1000, help="en fazla kaç bölüm işlensin")
-    k.add_argument("--hiz", default="veryfast", help="ffmpeg preset")
 
     k = komut("anahtar", k_anahtar, "şifre anahtarını siteden alıp bu cihaza kaydet / kontrol et")
     k.add_argument("--goster", action="store_true", help="anahtarı ekrana yaz (not almak için)")

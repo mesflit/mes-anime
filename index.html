@@ -226,11 +226,6 @@
             id: e.id || e.path.replace(/^\/+|\/+$/g, "").replace(/\//g, "-"),
             title: e.title || e.path,
             m3u8: `${dir}/index.m3u8`,
-            bandwidth: e.bandwidth, resolution: e.resolution,
-            variants: (e.variants || []).filter(v => v && v.path).map(v => ({
-              name: v.name, bandwidth: v.bandwidth, resolution: v.resolution,
-              m3u8: `${dir}/${v.path.replace(/^\/+|\/+$/g, "")}/index.m3u8`
-            })),
             subtitles: (e.subtitles || []).map(s => typeof s === "string"
               ? { lang: s, label: LANG_LABELS[s] || s.toUpperCase(), src: `${dir}/${s}.vtt` }
               : { ...s, src: url(s.src) })
@@ -422,20 +417,6 @@
       } catch { return null; }
     }
 
-    const heightOf = l => { const m = /x(\d+)$/.exec(l.resolution || "") || /(\d+)p$/.exec(l.name || ""); return m ? +m[1] : 0; };
-    function qualityLevels(ep) {
-      const all = [{ name: "orijinal", m3u8: ep.m3u8, bandwidth: ep.bandwidth, resolution: ep.resolution }, ...(ep.variants || [])];
-      return all.map(l => ({ ...l, height: heightOf(l) }));
-    }
-    function masterPlaylist(levels) {
-      const txt = "#EXTM3U\n" + levels.map(l =>
-        `#EXT-X-STREAM-INF:BANDWIDTH=${l.bandwidth || 5000000}${l.resolution ? ",RESOLUTION=" + l.resolution : ""}\n${l.m3u8}`
-      ).join("\n") + "\n";
-      const u = URL.createObjectURL(new Blob([txt], { type: "application/vnd.apple.mpegurl" }));
-      blobUrls.push(u);
-      return u;
-    }
-
     async function loadVideo(anime, ep) {
       teardown();
       const token = {};
@@ -469,21 +450,8 @@
         video.appendChild(track);
       });
 
-      // Kaliteler: orijinal + mes.anime'deki düşük kopyalar (ör. 480p). Birden fazlaysa
-      // tarayıcıda bir "master playlist" üretilir; hls.js internet hızına göre kendisi seçer.
-      const levels = qualityLevels(ep);
-      const qOptions = levels.length > 1 ? [0, ...new Set(levels.map(l => l.height).filter(Boolean))] : [];
-      const qPref = qOptions.includes(store.get("quality", 0)) ? store.get("quality", 0) : 0;
-      const setQuality = q => {
-        store.set("quality", q);
-        if (!hls || !hls.levels || !hls.levels.length) return;
-        const i = q ? hls.levels.findIndex(l => l.height === q) : -1;
-        if (hls.currentLevel !== i || (i === -1 && !hls.autoLevelEnabled)) hls.currentLevel = i;
-      };
-
       if (window.Hls && Hls.isSupported()) {
         hls = new Hls({ loader: KeyInterceptLoader, maxBufferLength: 30 });
-        hls.on(Hls.Events.MANIFEST_PARSED, () => { if (qPref) setQuality(qPref); });
         let mediaRetry = 0;
         hls.on(Hls.Events.ERROR, (_, data) => {
           if (!data.fatal) return;
@@ -491,7 +459,7 @@
           else if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRetry++ < 3) { hls.recoverMediaError(); }
           else { showMsg("Video oynatılamadı. Lütfen sayfayı yenileyin."); }
         });
-        hls.loadSource(levels.length > 1 ? masterPlaylist(levels) : ep.m3u8);
+        hls.loadSource(ep.m3u8);
         hls.attachMedia(video);
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = ep.m3u8;
@@ -505,7 +473,6 @@
         captions: { active: !!chosen && pref !== "off", update: true, language: chosen ? chosen.lang : "auto" },
         controls: ["play-large", "rewind", "play", "fast-forward", "progress", "current-time", "duration", "mute", "volume", "captions", "settings", "pip", "fullscreen"],
         settings: ["captions", "quality", "speed"],
-        quality: qOptions.length && hls ? { default: qPref, options: qOptions, forced: true, onChange: setQuality } : undefined,
         seekTime: 10,
         keyboard: { focused: true, global: true },
         i18n: {
@@ -515,13 +482,9 @@
           enableCaptions: "Altyazıyı aç", disableCaptions: "Altyazıyı kapat", enterFullscreen: "Tam ekran",
           exitFullscreen: "Tam ekrandan çık", frameTitle: "Oynatıcı", captions: "Altyazı", settings: "Ayarlar",
           speed: "Hız", normal: "Normal", quality: "Kalite", loop: "Döngü", start: "Başlangıç", end: "Bitiş",
-          all: "Tümü", reset: "Sıfırla", disabled: "Kapalı", enabled: "Açık", pip: "Resim içinde resim",
-          qualityLabel: { 0: "Otomatik" }
+          all: "Tümü", reset: "Sıfırla", disabled: "Kapalı", enabled: "Açık", pip: "Resim içinde resim"
         }
       });
-
-      // Plyr kalite menüsünde kayıtlı seçimi işaretle (kendisi yapmıyor)
-      if (qOptions.length && hls) player.once("ready", () => { player.quality = qPref; });
 
       // Kaldığın yerden devam
       const saved = getProg(anime, ep);
@@ -607,14 +570,14 @@
       return segs;
     }
 
-    async function downloadEpisode(anime, ep, src = ep.m3u8, suffix = "") {
+    async function downloadEpisode(anime, ep) {
       if (dl) return;
       const ctrl = new AbortController(), signal = ctrl.signal;
       dl = { key: anime.id + "/" + ep.id, title: ep.title, pct: 0, ctrl, text: "Hazırlanıyor..." };
       renderDl();
-      const name = fileName(`${anime.title} - ${ep.title}${suffix}`);
+      const name = fileName(`${anime.title} - ${ep.title}`);
       try {
-        const segs = parsePlaylist(await (await fetch(src, { signal })).text(), src);
+        const segs = parsePlaylist(await (await fetch(ep.m3u8, { signal })).text(), ep.m3u8);
         if (!segs.length) throw new Error("Bölüm listesi boş");
         const aes = await crypto.subtle.importKey("raw", AES_KEY_BUF, "AES-CBC", false, ["decrypt"]);
         const get = async s => {
@@ -699,9 +662,7 @@
         btn("⬇ Bölümü indir", "", null).disabled = true;
         bar.insertAdjacentHTML("beforeend", `<span class="dl-note">Başka bölüm iniyor (${esc(dl.title)}, %${dl.pct})</span>`);
       } else {
-        const h = heightOf(ep);
-        btn(`⬇ Bölümü indir${h ? ` (${h}p)` : " (MP4)"}`, "", () => downloadEpisode(anime, ep));
-        (ep.variants || []).forEach(v => btn(`⬇ ${v.name} (küçük dosya)`, "", () => downloadEpisode(anime, ep, v.m3u8, ` (${v.name})`)));
+        btn("⬇ Bölümü indir (MP4)", "", () => downloadEpisode(anime, ep));
       }
       (ep.subtitles || []).forEach(s => btn(`⬇ ${s.label || LANG_LABELS[s.lang] || s.lang} altyazı`, "", () => downloadSub(anime, ep, s)));
     }

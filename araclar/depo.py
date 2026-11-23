@@ -1,9 +1,5 @@
 """Git işlemleri: video deposunu videolar olmadan klonlama, gönderme, yeni depo açma."""
-import json
-import os
 import shutil
-import urllib.error
-import urllib.request
 from pathlib import Path
 
 from .ayar import DEPOLAR_TXT, KOK, KULLANICI, calistir, cikti, depo_yolu, hata
@@ -48,25 +44,13 @@ def hazirla(depo: str) -> Path:
 
 
 def olustur(depo: str):
-    """GitHub'da herkese açık boş depo açar: gh varsa onunla, yoksa GH_TOKEN ile API'den (Colab)."""
+    """GitHub'da herkese açık boş depo açar (gh gerekir)."""
     if var_mi(depo):
         print(f"ℹ️  github.com/{KULLANICI}/{depo} zaten var.")
         return
-    if shutil.which("gh"):
-        calistir(["gh", "repo", "create", f"{KULLANICI}/{depo}", "--public"])
-        return
-    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
-    if not token:
-        hata(f"gh da GH_TOKEN da yok. Depoyu elle aç (herkese açık): https://github.com/new  ad: {depo}")
-    istek = urllib.request.Request(
-        "https://api.github.com/user/repos", method="POST",
-        data=json.dumps({"name": depo, "private": False}).encode(),
-        headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"})
-    try:
-        urllib.request.urlopen(istek, timeout=30).close()
-    except urllib.error.HTTPError as e:
-        hata(f"Depo açılamadı ({e.code}): token'ın depo açma yetkisi var mı? Elle aç: https://github.com/new")
-    print(f"📁 github.com/{KULLANICI}/{depo} açıldı")
+    if not shutil.which("gh"):
+        hata(f"gh yok. Depoyu elle aç (herkese açık): https://github.com/new  ad: {depo}")
+    calistir(["gh", "repo", "create", f"{KULLANICI}/{depo}", "--public"])
 
 
 def gonder(depo: Path, mesaj: str) -> bool:
@@ -89,32 +73,6 @@ def sitede_mi(depo: str) -> bool:
         return False
     return any(s.split("#")[0].strip().split("@")[0] == f"{KULLANICI}/{depo}"
                for s in DEPOLAR_TXT.read_text(encoding="utf-8").splitlines())
-
-
-def kaliteyi_baslat(depo: str):
-    """GitHub Actions'taki "Düşük kalite ekle" workflow'unu bu depo için başlatır (gh gerekir)."""
-    import subprocess
-    if not shutil.which("gh"):
-        print("ℹ️  480p kopya için: GitHub -> Actions -> \"Düşük kalite ekle\" -> Run workflow")
-        return
-    r = subprocess.run(["gh", "workflow", "run", "kalite.yml", "-R", f"{KULLANICI}/mes-anime", "-f", f"depo={depo}"],
-                       capture_output=True, text=True)
-    if r.returncode == 0:
-        print("🎞️  480p kopyalar GitHub Actions'ta hazırlanıyor (birkaç dakika sürer)")
-    else:
-        print(f"ℹ️  480p workflow'u başlatılamadı: {(r.stderr or r.stdout).strip()[:200]}")
-
-
-def sitedeki_depolar() -> list[str]:
-    """data/depolar.txt'deki bu kullanıcının depo adları."""
-    if not DEPOLAR_TXT.exists():
-        return []
-    sonuc = []
-    for s in DEPOLAR_TXT.read_text(encoding="utf-8").splitlines():
-        s = s.split("#")[0].strip().split("@")[0]
-        if s.startswith(f"{KULLANICI}/"):
-            sonuc.append(s.split("/", 1)[1])
-    return sonuc
 
 
 def siteye_ekle(depo: str, gonder_mi: bool = True):
