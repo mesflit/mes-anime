@@ -214,6 +214,12 @@
         "title": "2. Sezon 11. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep11/index.m3u8",
         "subtitles": []
+      },
+      {
+        "id": "s2-ep12",
+        "title": "2. Sezon 12. Bölüm",
+        "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep12/index.m3u8",
+        "subtitles": []
       }
     ]
   }
