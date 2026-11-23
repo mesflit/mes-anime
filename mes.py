@@ -10,6 +10,7 @@
     python3 mes.py ekle opm bolum.mkv --sezon 3 --bolum 13 --baslik "Final"
 
   Diğer:
+    python3 mes.py anahtar               # şifre anahtarını siteden alıp bu cihaza kaydet
     python3 mes.py guncelle opm          # klasörlere bakıp mes.anime'yi yenile ve gönder
     python3 mes.py klonla opm            # depoyu videolar olmadan ../opm'a indir
     python3 mes.py altyazi temizle opm   # tüm .vtt'leri temizle
@@ -18,11 +19,13 @@
 Gönderme (git push) istemezsen her komuta --gonderme ekle.
 """
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
 
 from araclar import altyazi, depo, katalog, video
+from araclar import ayar
 from araclar.ayar import VIDEO_UZANTILARI, gizli_anahtar, hata
 
 
@@ -95,6 +98,20 @@ def k_klonla(a):
     depo.klonla(a.depo)
 
 
+def k_anahtar(a):
+    site = ayar.anahtari_siteden_al()
+    yerel = os.environ.get("VIDEO_SECRET_KEY", "").strip() or \
+        (ayar.ANAHTAR_DOSYASI.read_text(encoding="utf-8").strip() if ayar.ANAHTAR_DOSYASI.exists() else "")
+    if yerel and yerel != site:
+        print("⚠️  Bu cihazdaki anahtar sitedekiyle AYNI DEĞİL! Bu cihazla şifrelenen bölümler sitede oynamaz.")
+        if os.environ.get("VIDEO_SECRET_KEY"):
+            print("   VIDEO_SECRET_KEY ortam değişkenini kaldır (~/.bashrc), sitedeki kullanılacak.")
+    ayar.anahtari_kaydet(site)
+    print(f"🔑 Sitedeki anahtar bu cihaza kaydedildi: {ayar.ANAHTAR_DOSYASI} ({site[:4]}...{site[-4:]})")
+    if a.goster:
+        print(site)
+
+
 def k_altyazi(a):
     yol = depo.hazirla(a.depo)
     klasorler = sorted(p.parent for p in yol.glob("s*/ep*/index.m3u8"))
@@ -114,6 +131,11 @@ def k_altyazi(a):
 
 
 def main():
+    for akis in (sys.stdout, sys.stderr):          # Windows konsolunda emoji/Türkçe hata vermesin
+        try:
+            akis.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     alt = p.add_subparsers(dest="komut", required=True, metavar="komut")
 
@@ -144,6 +166,9 @@ def main():
 
     k = komut("klonla", k_klonla, "depoyu videolar olmadan ../<depo>'ya indir")
     k.add_argument("depo")
+
+    k = komut("anahtar", k_anahtar, "şifre anahtarını siteden alıp bu cihaza kaydet / kontrol et")
+    k.add_argument("--goster", action="store_true", help="anahtarı ekrana yaz (not almak için)")
 
     k = komut("altyazi", k_altyazi, "altyazı temizle / çevir")
     k.add_argument("islem", choices=["temizle", "cevir"])

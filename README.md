@@ -55,20 +55,53 @@ Video depoları mes-anime'nin **yanında** durur (`mes.py` onları `../<depo>` o
     ├── opm/
     └── deathnote/
 
-## İlk Kurulum (telefonda, Termux)
+## Kurulum (telefon veya PC, her cihazda bir kere)
 
-    pkg install -y git gh openssl-tool python ffmpeg
+Telefonda (Termux):
+
+    pkg install -y git gh python ffmpeg
     pip install deep-translator          # otomatik Türkçe çeviri için
     gh auth login                        # "yeni" komutunun depo açabilmesi için
-    export VIDEO_SECRET_KEY=$(openssl rand -hex 32)
-    echo "export VIDEO_SECRET_KEY=$VIDEO_SECRET_KEY" >> ~/.bashrc
-    gh secret set VIDEO_SECRET_KEY -b "$VIDEO_SECRET_KEY"
+    git clone https://github.com/mesflit/mes-anime.git && cd mes-anime
+    python3 mes.py anahtar               # şifre anahtarını siteden alıp bu cihaza kaydeder
 
-GitHub Pages ayarı: Settings -> Pages -> Source -> GitHub Actions
+PC'de: git, Python, ffmpeg ve [gh](https://cli.github.com) kur, sonra son dört satır aynı
+(Windows'ta `python3` yerine `python`).
 
-> `VIDEO_SECRET_KEY` bir kere belirlenir ve **asla değiştirilmez**. Değişirse daha önce
-> şifrelenmiş tüm bölümler oynatılamaz (hepsinin yeniden kodlanması gerekir).
-> Yeni telefona geçerken eski anahtarı `~/.bashrc`'den al.
+GitHub Pages ayarı (bir kere): Settings -> Pages -> Source -> GitHub Actions
+
+## Şifre anahtarı (VIDEO_SECRET_KEY)
+
+Videolar bu anahtarla şifrelenir. **Tüm cihazlarda aynı anahtar olmalı**, yoksa o cihazla
+eklenen bölümler sitede oynamaz.
+
+- Asıl anahtar GitHub'da secret olarak durur (Settings -> Secrets -> Actions -> `VIDEO_SECRET_KEY`).
+  GitHub onu bir daha göstermez, ama site yayınlanırken sayfaya yazılır.
+- `python3 mes.py anahtar` bu yüzden anahtarı **yayındaki siteden** alır ve cihazda
+  `~/.mes-anime-anahtar` dosyasına kaydeder. Cihazda anahtar yoksa `ekle` de bunu kendisi yapar.
+  Yani telefonda da PC'de de elle bir şey ayarlamana gerek yok.
+- `mes.py` anahtarı sırayla şuradan arar: `VIDEO_SECRET_KEY` ortam değişkeni -> `~/.mes-anime-anahtar` -> site.
+- `python3 mes.py anahtar` cihazdaki anahtarın sitedekiyle aynı olup olmadığını da kontrol eder.
+  "AYNI DEĞİL" derse `~/.bashrc`'deki eski `export VIDEO_SECRET_KEY=...` satırını sil.
+- Not almak istersen: `python3 mes.py anahtar --goster`
+- Site başka adresteyse: `MES_SITE=https://adres/ python3 mes.py anahtar`
+- **GitHub'daki secret'ı asla değiştirme.** Değişirse eski bölümlerin hepsi oynatılamaz
+  (yeniden kodlanmaları gerekir).
+
+İlk kez kuruluyorsa (secret hiç yoksa):
+
+    gh secret set VIDEO_SECRET_KEY -R mesflit/mes-anime -b "$(openssl rand -hex 32)"
+
+sonra master'a bir push yap (site yayınlansın) ve `python3 mes.py anahtar`.
+
+## İki cihazdan çalışmak
+
+Cihaz değiştirdiğinde önce diğer cihazın gönderdiklerini al:
+
+    cd ~/mes-anime && git pull
+    cd ~/opm && git pull               # çalışacağın anime deposunda
+
+Aynı animeye aynı anda iki cihazdan bölüm ekleme.
 
 ## mes.py komutları
 
@@ -208,7 +241,9 @@ Her video deposunun kökünde durur. JSON biçimindedir, yollar depo köküne g�
 
 | Durum | Çözüm |
 |---|---|
-| `VIDEO_SECRET_KEY tanımlı değil` | `source ~/.bashrc` |
+| `Site okunamadı` | İnternet var mı? Site adresi farklıysa `MES_SITE=https://adres/` |
+| Yeni bölüm sitede oynamıyor ama eskiler oynuyor | Anahtar farklı: `python3 mes.py anahtar` ile kontrol et, bölümü tekrar ekle |
+| `rejected` (push reddedildi) | Diğer cihaz önce göndermiş: o depoda `git pull`, sonra tekrar |
 | `Türkçe çeviri atlandı` | `pip install deep-translator`, sonra `python3 mes.py altyazi cevir <depo>` |
 | `Altyazı resim formatında` | Videonun yanına `.sup` kaydedildi. `.srt` bul, `--altyazi tr:dosya.srt` ile tekrar ekle |
 | `gh yok` | `pkg install gh && gh auth login` ya da depoyu github.com/new'den elle aç (herkese açık) |

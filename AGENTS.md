@@ -35,8 +35,10 @@ Sitenin geri kalanı yalnızca bu iç biçimi bilir.
   isteğini `KeyInterceptLoader` ağa çıkmadan karşılar; indirme (`downloadEpisode`) aynı
   `AES_KEY_BUF` ile WebCrypto AES-CBC çözer. Bunlardan biri değişirse tüm mevcut bölümler
   oynatılamaz/indirilemez.
-- `index.html`'deki `__VIDEO_SECRET_KEY__` yer tutucusu `deploy.yml`'de `sed` ile değiştirilir.
-  Adını değiştirme, gerçek anahtarı asla depoya yazma.
+- `index.html`'deki `const SECRET_KEY = "__VIDEO_SECRET_KEY__"` satırı `deploy.yml`'de `sed` ile doldurulur;
+  `mes.py anahtar` anahtarı yayındaki sayfadan bu satırla okur. Satırın biçimini ve yer tutucunun adını
+  değiştirme, gerçek anahtarı asla depoya yazma. Kullanıcının cihazlarında anahtar yoktu; tek kaynak
+  GitHub secret'ı + yayındaki sayfa.
 - `mes.anime` biçimi: README'deki tabloya bak. Betikler var olan `title` ve bilinmeyen
   alanları korur; bunu bozma (kullanıcı başlıkları elle düzenler).
 - `araclar/katalog.py` (`yaz`) her bölümü tek satıra yazar (okunabilir diff için). Biçim JSON kalmalı.
@@ -48,7 +50,7 @@ Sitenin geri kalanı yalnızca bu iç biçimi bilir.
 | `index.html` | Tüm site. hls.js 1.5.17 + Plyr 3.7.8 (jsDelivr); indirmede mux.js 7.0.3 sadece gerekince yüklenir. Hash tabanlı yönlendirme |
 | `data/depolar.txt` | `sahip/depo[@dal]`, `#` yorum. Sıra = ana sayfa sırası |
 | `mes.py` | Tek giriş noktası (argparse): `yeni`, `ekle`, `guncelle`, `klonla`, `altyazi`. Sadece iş akışı; işin kendisi `araclar/`'da |
-| `araclar/ayar.py` | `KULLANICI` (GH_USER, varsayılan mesflit), `KOK`, `depo_yolu()`, `calistir()`, `gizli_anahtar()` |
+| `araclar/ayar.py` | `KULLANICI` (GH_USER, varsayılan mesflit), `KOK`, `depo_yolu()`, `calistir()`, `gizli_anahtar()` (ortam değişkeni -> `~/.mes-anime-anahtar` -> yayındaki sitenin `SECRET_KEY`'i; `MES_SITE` ile adres değişir) |
 | `araclar/video.py` | `hls_yap()`: ffprobe ile ses seçimi (jpn öncelikli), ffmpeg ile 6 sn'lik AES-128 HLS |
 | `araclar/altyazi.py` | VTT `oku/yaz/temizle`, `cikar()` (metin altyazı, eng öncelikli; resimse .sup), `cevir()` (deep-translator, başarısızsa RuntimeError, sahte tr.vtt yazmaz), `hazirla()` |
 | `araclar/katalog.py` | `mes.anime`: `oku/yaz/guncelle`, `bolumler()`, `sonraki_bolum()` |
