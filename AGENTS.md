@@ -41,6 +41,9 @@ Sitenin geri kalanı yalnızca bu iç biçimi bilir.
   GitHub secret'ı + yayındaki sayfa.
 - `mes.anime` biçimi: README'deki tabloya bak. Betikler var olan `title` ve bilinmeyen
   alanları korur; bunu bozma (kullanıcı başlıkları elle düzenler).
+- Kalite: `variants` (video deposundaki `resize.py` yazar) varsa site `masterPlaylist()` ile blob: master
+  playlist üretir; Plyr `quality` (forced) menüsü `hls.currentLevel`'i değiştirir, seçim `ma:quality`.
+  Orijinal `index.m3u8` ve parçaları asla değiştirme; kopyalar sadece `<bölüm>/<N>p/` altındadır.
 - `araclar/katalog.py` (`yaz`) her bölümü tek satıra yazar (okunabilir diff için). Biçim JSON kalmalı.
 
 ## Dosyalar

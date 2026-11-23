@@ -26,6 +26,7 @@ ayrı ayrı gönderir. Birkaç dakika sonra sitede görünür.
 - Sezon sekmeleri, otomatik sonraki bölüm, `Shift+N` / `Shift+P` kısayolları
 - Paylaşılabilir bölüm linkleri (`#/izle/opm/s1-ep3`), sayfa yenilenince bölüm kaybolmaz
 - **İndirme**: bölümü MP4, altyazıları SRT olarak indirme (bkz. "İndirme nasıl çalışır?")
+- **Kalite seçimi**: bölümün 480p kopyası varsa Otomatik / 1080p / 480p menüsü; internet yavaşsa kendiliğinden düşer (kopyaları video deposundaki `resize.py` üretir)
 - Arama (anime adı ve kategoride)
 
 ## Depo yapısı
@@ -185,6 +186,9 @@ Her video deposunun kökünde durur. JSON biçimindedir, yollar depo köküne g�
 | `episodes[].path` | Bölüm klasörü. İçinde `index.m3u8` olmalı |
 | `episodes[].title` | Bölüm adı. Elle değiştirilebilir, `mes.py` üzerine yazmaz |
 | `episodes[].subtitles` | O klasördeki `<dil>.vtt` dosyaları (`tr` önce) |
+| `episodes[].variants` | Düşük kalite kopyaları: `[{"name": "480p", "path": "480p", "bandwidth": ..., "resolution": "854x480"}]`. Video deposundaki `resize.py` yazar |
+| `episodes[].bandwidth`, `resolution` | Orijinalin bit hızı ve çözünürlüğü (`resize.py` yazar) |
+| `episodes[].no_variants` | Orijinal zaten küçük, kopya gerekmez (`resize.py` yazar) |
 | `id` (isteğe bağlı) | Animenin site kimliği. Yoksa depo adı (`opm`) kullanılır |
 | `episodes[].id` (isteğe bağlı) | Yoksa `path`'ten üretilir: `s1/ep1` -> `s1-ep1` |
 
