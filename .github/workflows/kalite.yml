@@ -1,0 +1,64 @@
+name: Düşük kalite ekle
+
+# Bölümlere 480p kopya ekler (orijinal dosyalara dokunmaz). Site bunları kalite menüsünde gösterir
+# ve internet yavaşsa kendiliğinden 480p'ye düşer.
+#
+# Çalıştırma: Actions -> "Düşük kalite ekle" -> Run workflow
+# (mes.py ekle, gh kuruluysa bölüm ekledikten sonra bunu kendisi başlatır.)
+#
+# Gerekli secret'lar (Settings -> Secrets and variables -> Actions):
+#   VIDEO_SECRET_KEY  : zaten var (videoların şifre anahtarı)
+#   VIDEO_REPO_TOKEN  : video depolarına (opm, deathnote...) yazabilen token
+#                       (fine-grained, Repository access: All repositories, Contents: Read and write)
+on:
+  workflow_dispatch:
+    inputs:
+      depo:
+        description: "Depo (ör. opm). Boş bırakılırsa sitedeki tüm depolar"
+        required: false
+        default: ""
+      sinir:
+        description: "Bu çalıştırmada en fazla kaç bölüm (kalanlar için tekrar çalıştır)"
+        required: false
+        default: "40"
+
+concurrency:
+  group: kalite
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  kalite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kontrol
+        env:
+          VIDEO_SECRET_KEY: ${{ secrets.VIDEO_SECRET_KEY }}
+          VIDEO_REPO_TOKEN: ${{ secrets.VIDEO_REPO_TOKEN }}
+        run: |
+          [ -n "$VIDEO_SECRET_KEY" ] || { echo "::error::VIDEO_SECRET_KEY secret'ı yok"; exit 1; }
+          [ -n "$VIDEO_REPO_TOKEN" ] || { echo "::error::VIDEO_REPO_TOKEN secret'ı yok (README: Düşük kalite)"; exit 1; }
+
+      - name: ffmpeg kur
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+
+      - name: Git ayarla
+        env:
+          VIDEO_REPO_TOKEN: ${{ secrets.VIDEO_REPO_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global url."https://x-access-token:${VIDEO_REPO_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+      - name: 480p kopyaları üret
+        env:
+          VIDEO_SECRET_KEY: ${{ secrets.VIDEO_SECRET_KEY }}
+          GH_USER: ${{ github.repository_owner }}
+          DEPO: ${{ inputs.depo }}
+          SINIR: ${{ inputs.sinir }}
+        run: python3 mes.py kalite $DEPO --sinir "${SINIR:-40}"

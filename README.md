@@ -26,18 +26,20 @@ ayrı ayrı gönderir. Birkaç dakika sonra sitede görünür.
 - Sezon sekmeleri, otomatik sonraki bölüm, `Shift+N` / `Shift+P` kısayolları
 - Paylaşılabilir bölüm linkleri (`#/izle/opm/s1-ep3`), sayfa yenilenince bölüm kaybolmaz
 - **İndirme**: bölümü MP4, altyazıları SRT olarak indirme (bkz. "İndirme nasıl çalışır?")
+- **Kalite seçimi**: Otomatik / 1080p / 480p; internet yavaşsa kendiliğinden düşer (bkz. "Düşük kalite (480p)")
 - Arama (anime adı ve kategoride)
 
 ## Depo yapısı
 
     mes-anime/
     ├── index.html             # Sitenin tamamı (HTML + CSS + JS, tek dosya)
-    ├── mes.py                 # Yönetim aracı: yeni / ekle / guncelle / klonla / altyazi
+    ├── mes.py                 # Yönetim aracı: yeni / ekle / guncelle / klonla / altyazi / kalite / anahtar
     ├── araclar/               # mes.py'nin modülleri
     │   ├── ayar.py            #   ortak ayarlar (GitHub kullanıcı adı, yollar, dil adları)
     │   ├── video.py           #   videoyu şifreli HLS'e çevirme
     │   ├── altyazi.py         #   altyazı çıkarma / temizleme / çeviri
     │   ├── katalog.py         #   mes.anime okuma / yazma / güncelleme
+    │   ├── kalite.py          #   480p kopya üretme
     │   └── depo.py            #   git: hafif klon, gönderme, yeni depo, depolar.txt
     ├── data/
     │   ├── depolar.txt        # Sitede görünecek anime depoları (her satıra bir tane)
@@ -46,6 +48,7 @@ ayrı ayrı gönderir. Birkaç dakika sonra sitede görünür.
     ├── scripts/pipeline.py    # ESKİ: torrent + Doodstream hattı (kapalı, bkz. aşağı)
     └── .github/workflows/
         ├── deploy.yml         # master'a push -> anahtarı gömer, GitHub Pages'e yayınlar
+        ├── kalite.yml         # elle / mes.py ekle'den: bölümlere 480p kopya ekler
         └── auto_fansub.yml    # ESKİ: pipeline.py'yi çalıştırır (sadece elle)
 
 Video depoları mes-anime'nin **yanında** durur (`mes.py` onları `../<depo>` olarak arar, yoksa kendisi klonlar):
@@ -185,6 +188,9 @@ Her video deposunun kökünde durur. JSON biçimindedir, yollar depo köküne g�
 | `episodes[].path` | Bölüm klasörü. İçinde `index.m3u8` olmalı |
 | `episodes[].title` | Bölüm adı. Elle değiştirilebilir, `mes.py` üzerine yazmaz |
 | `episodes[].subtitles` | O klasördeki `<dil>.vtt` dosyaları (`tr` önce) |
+| `episodes[].variants` | Düşük kalite kopyaları: `[{"name": "480p", "path": "480p", "bandwidth": ..., "resolution": "854x480"}]`. `mes.py kalite` yazar |
+| `episodes[].bandwidth`, `resolution` | Orijinalin bit hızı ve çözünürlüğü. `mes.py kalite` yazar |
+| `episodes[].no_variants` | Orijinal zaten küçük, kopya gereksiz (`mes.py kalite` yazar) |
 | `id` (isteğe bağlı) | Animenin site kimliği. Yoksa depo adı (`opm`) kullanılır |
 | `episodes[].id` (isteğe bağlı) | Yoksa `path`'ten üretilir: `s1/ep1` -> `s1-ep1` |
 
@@ -223,6 +229,35 @@ Her video deposunun kökünde durur. JSON biçimindedir, yollar depo köküne g�
 - Dosya bellekte birleştirildiği için çok eski telefonlarda uzun bölümler zorlanabilir.
 - Not: İndirme, şifrelemenin amacını (videonun siteden dışarı çıkmaması) bilerek devre dışı bırakır.
 
+## Düşük kalite (480p)
+
+Her bölümün yanına 480p bir kopya eklenebilir; **orijinal dosyalara dokunulmaz**, kopya
+`<bölüm>/480p/` klasörüne yazılır ve aynı anahtarla şifrelenir. Sitede oynatıcının
+⚙️ menüsünde "Kalite: Otomatik / 1080p / 480p" çıkar (seçim hatırlanır), "Otomatik"te
+internet yavaşsa kendiliğinden 480p'ye düşer. İndirme düğmelerine "480p (küçük dosya)" eklenir.
+480p kopya orijinalin yaklaşık onda biri ila üçte biri kadar veri harcar. Kopyası olmayan
+bölümler eskisi gibi çalışır.
+
+Kopyaları **GitHub Actions** üretir (telefon/PC yorulmaz, ücretsiz):
+
+1. Bir kere: video depolarına yazabilen bir token oluştur ve secret olarak ekle
+   - GitHub -> Settings -> Developer settings -> Personal access tokens -> Fine-grained tokens -> Generate
+   - Repository access: **All repositories** (yeni animeler de kapsansın), Permissions -> Contents: **Read and write**
+   - mes-anime -> Settings -> Secrets and variables -> Actions -> New repository secret:
+     Name `VIDEO_REPO_TOKEN`, değer: token
+2. mes-anime -> Actions -> **"Düşük kalite ekle"** -> Run workflow
+   (depo boşsa sitedeki tüm animeler; "sinir" bir seferde kaç bölüm). Her bölüm ayrı gönderilir;
+   yarıda kalırsa tekrar çalıştır, kaldığı yerden devam eder.
+
+Sonrasında `mes.py ekle` bölüm ekleyince, `gh` kuruluysa bu workflow'u kendisi başlatır.
+Elle de çalışır: `python3 mes.py kalite opm` (ağır iş, telefonda yavaştır).
+
+İnce noktalar:
+
+- Depo büyür (opm için tahminen +1-3 GB).
+- Bir kopyayı kaldırmak için klasörünü sil (`git rm -r s1/ep1/480p`) ve `python3 mes.py guncelle opm`.
+- Safari'nin kendi HLS oynatıcısında (hls.js çalışmayan eski iPhone'lar) kalite menüsü çıkmaz, orijinal oynar.
+
 ## Yayın (deploy) ve şifreleme nasıl çalışır?
 
 - `master`'a her push'ta `deploy.yml` çalışır: `index.html` içindeki `__VIDEO_SECRET_KEY__`
@@ -241,6 +276,7 @@ Her video deposunun kökünde durur. JSON biçimindedir, yollar depo köküne g�
 
 | Durum | Çözüm |
 |---|---|
+| "Düşük kalite ekle" `VIDEO_REPO_TOKEN secret'ı yok` | Yukarıdaki "Düşük kalite" 1. adım |
 | `Site okunamadı` | İnternet var mı? Site adresi farklıysa `MES_SITE=https://adres/` |
 | Yeni bölüm sitede oynamıyor ama eskiler oynuyor | Anahtar farklı: `python3 mes.py anahtar` ile kontrol et, bölümü tekrar ekle |
 | `rejected` (push reddedildi) | Diğer cihaz önce göndermiş: o depoda `git pull`, sonra tekrar |

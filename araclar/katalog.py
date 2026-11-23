@@ -87,6 +87,10 @@ def guncelle(depo: Path, ad=None, kategori=None, kapak=None, basliklar: dict | N
         e["path"] = yol
         e["title"] = (basliklar or {}).get(yol) or e.get("title") or f"{s}. Sezon {b}. Bölüm"
         e["subtitles"] = sorted((f.stem for f in (depo / yol).glob("*.vtt")), key=_sira)
+        if "variants" in e:                                      # klasörü silinen kaliteleri çıkar
+            e["variants"] = [v for v in e["variants"] if (depo / yol / v.get("path", "") / "index.m3u8").exists()]
+            if not e["variants"]:
+                del e["variants"]
         yeni_liste.append(e)
         if yol not in eski:
             eklenen.append(yol)
