@@ -202,6 +202,12 @@
         "title": "2. Sezon 9. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep9/index.m3u8",
         "subtitles": []
+      },
+      {
+        "id": "s2-ep10",
+        "title": "2. Sezon 10. Bölüm",
+        "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep10/index.m3u8",
+        "subtitles": []
       }
     ]
   }
