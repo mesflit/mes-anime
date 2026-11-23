@@ -1,0 +1,53 @@
+name: Bölümleri Senkronize Et
+
+# Video depolarındaki (opm vb.) yeni bölümleri bulup data/animes.json'a ekler ve siteyi yayınlar.
+# - Her saat başı kendiliğinden çalışır
+# - Actions sekmesinden "Run workflow" ile hemen çalıştırılabilir
+# - Video deposu push edince anında tetiklenebilir (README: "Anında güncelleme")
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [yeni-bolum]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: senkron
+  cancel-in-progress: false
+
+jobs:
+  senkron:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Video depolarını videolar olmadan klonla
+        run: |
+          for repo in $(python3 -c "import json;print(' '.join(a.get('repo',a['id']) for a in json.load(open('data/animes.json'))))"); do
+            git clone --depth 1 --filter=blob:none --no-checkout "https://github.com/${{ github.repository_owner }}/$repo.git" "../$repo"
+            git -C "../$repo" sparse-checkout set --no-cone '/*' '!*.ts'
+            git -C "../$repo" checkout
+          done
+
+      - name: animes.json güncelle
+        env:
+          GH_USER: ${{ github.repository_owner }}
+        run: python3 scripts/senkron.py
+
+      - name: Değişiklik varsa kaydet ve siteyi yayınla
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git diff --quiet data/ && { echo "Yeni bölüm yok."; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "chore: yeni bölümler otomatik eklendi"
+          git pull --rebase
+          git push
+          # Bot push'u deploy.yml'yi tetiklemez, o yüzden elle başlatıyoruz
+          gh workflow run deploy.yml --ref "${GITHUB_REF_NAME}"
