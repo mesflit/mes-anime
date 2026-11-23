@@ -61,8 +61,19 @@ def pack_hls(args):
     # MKV içindeki gömülü ilk altyazıyı otomatik çıkar (isteğe bağlı)
     if args.extract_sub:
         vtt_out = out_dir / "en.vtt"
-        res = subprocess.run(["ffmpeg", "-y", "-i", args.input, "-map", "0:s:0", str(vtt_out)])
-        if res.returncode == 0 and vtt_out.exists():
+        codec = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "s:0", "-show_entries",
+                                "stream=codec_name", "-of", "csv=p=0", args.input],
+                               capture_output=True, text=True).stdout.strip()
+        if codec in ("hdmv_pgs_subtitle", "dvd_subtitle", "dvb_subtitle"):
+            # Resim altyazı: metne çevrilemez, OCR için .sup olarak kenara kaydet (repoya girmez)
+            sup = Path(args.input).with_suffix(".sup")
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", args.input, "-map", "0:s:0", "-c", "copy", str(sup)])
+            print(f"⚠️  UYARI: Altyazı resim formatında ({codec}), metne çevrilemedi!")
+            print(f"    OCR için kaydedildi: {sup}")
+        elif not codec:
+            print("⚠️  UYARI: Bu dosyada gömülü altyazı yok.")
+        res = subprocess.run(["ffmpeg", "-y", "-i", args.input, "-map", "0:s:0", str(vtt_out)]) if codec and vtt_out.parent.exists() and codec not in ("hdmv_pgs_subtitle", "dvd_subtitle", "dvb_subtitle") else None
+        if res and res.returncode == 0 and vtt_out.exists() and vtt_out.stat().st_size > 10:
             clean_vtt(vtt_out)
             subtitles.append({"lang": "en", "label": "İngilizce", "src": f"{base_url}/en.vtt"})
 
