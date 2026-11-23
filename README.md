@@ -47,36 +47,38 @@ Zaten tam klonun varsa aynı komut `.ts` dosyalarını diskten kaldırır.
 ## Bölümleri otomatik ekleme (elle animes.json yazmaya gerek yok)
 
 Video deposuna `sN/epM/index.m3u8` (+ `tr.vtt`, `en.vtt`) klasörlerini push etmen yeterli.
-`Bölümleri Senkronize Et` workflow'u her saat başı video depolarını tarar, yeni bölümleri
-`data/animes.json`'a ekler ve siteyi yeniden yayınlar. Beklemek istemezsen:
-GitHub -> Actions -> "Bölümleri Senkronize Et" -> Run workflow.
+Push edildiği anda `Bölümleri Senkronize Et` workflow'u çalışır, yeni bölümleri
+`data/animes.json`'a ekler ve siteyi yeniden yayınlar. (Zamanlanmış çalışma yok.)
+Elle çalıştırmak için: GitHub -> Actions -> "Bölümleri Senkronize Et" -> Run workflow.
 
-Telefondan/elle çalıştırmak için (hafif klon yeterli):
+### Push edilince güncelleme kurulumu (her video deposu için bir kere)
+
+1. Token oluştur: GitHub -> Settings -> Developer settings -> Personal access tokens ->
+   Fine-grained tokens -> Generate new token
+   - Repository access: Only select repositories -> `mes-anime`
+   - Permissions -> Contents: **Read and write**
+2. Video deposunda (ör. opm): Settings -> Secrets and variables -> Actions -> New repository secret
+   - Name: `MES_ANIME_TOKEN`, Secret: oluşturduğun token
+3. `ornek/bildir.yml` dosyasını video deposuna `.github/workflows/bildir.yml` olarak kopyala:
+
+       mkdir -p ../opm/.github/workflows
+       cp ornek/bildir.yml ../opm/.github/workflows/
+       cd ../opm && git add --sparse .github && git commit -m "ci: mes-anime'ye haber ver" && git push
+
+Bu push'tan itibaren opm'a her push'ta site kendiliğinden güncellenir.
+
+### Elle çalıştırma (hafif klon yeterli)
 
     python3 scripts/senkron.py          # tüm animeler
     python3 scripts/senkron.py opm      # sadece opm
 
-Yeni anime eklemek için (bir kere; sonra bölümleri hep kendisi bulur):
+Yeni anime eklemek için (bir kere; sonra bölümleri hep kendisi bulur, video deposuna da bildir.yml ekle):
 
     bash scripts/hafif_klon.sh yeni-repo
     python3 scripts/senkron.py yeni-repo --anime "Anime Adı" --category "Aksiyon" --poster data/kapak.jpg
 
 - Var olan bölüm başlıkları korunur, yenilere "N. Sezon M. Bölüm" verilir (istersen sonradan elle değiştir).
 - Bölüm sırası sezon ve bölüm numarasına göre otomatik dizilir.
-
-### Anında güncelleme (isteğe bağlı)
-
-Saat başını beklemeden, video deposu push edildiği an çalışsın istersen video deposuna
-`.github/workflows/bildir.yml` ekle ve `MES_ANIME_TOKEN` adında (mes-anime'ye "Contents: write"
-yetkili, fine-grained) bir token'ı o deponun secret'ı olarak kaydet:
-
-    on: { push: { branches: [main] } }
-    jobs:
-      bildir:
-        runs-on: ubuntu-latest
-        steps:
-          - run: gh api repos/mesflit/mes-anime/dispatches -f event_type=yeni-bolum
-            env: { GH_TOKEN: "${{ secrets.MES_ANIME_TOKEN }}" }
 
 ## Altyazı araçları
 

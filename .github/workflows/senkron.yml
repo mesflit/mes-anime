@@ -1,12 +1,10 @@
 name: Bölümleri Senkronize Et
 
 # Video depolarındaki (opm vb.) yeni bölümleri bulup data/animes.json'a ekler ve siteyi yayınlar.
-# - Her saat başı kendiliğinden çalışır
-# - Actions sekmesinden "Run workflow" ile hemen çalıştırılabilir
-# - Video deposu push edince anında tetiklenebilir (README: "Anında güncelleme")
+# Zamanlanmış çalışmaz; sadece şu durumlarda çalışır:
+# - Video deposu push edilince (video deposundaki bildir.yml tetikler)
+# - Actions sekmesinden "Run workflow" ile elle
 on:
-  schedule:
-    - cron: '17 * * * *'
   workflow_dispatch:
   repository_dispatch:
     types: [yeni-bolum]
