@@ -1,8 +1,10 @@
 name: Otomatik Fansub Pipeline
 
+# Zamanlanmış çalışma kapatıldı: WATCHLIST ve UPLOAD_API_KEY ayarlanmadan her 30 dk'da
+# boşuna torrent indiriyordu. Hazır olunca aşağıdaki iki satırın başındaki # işaretini kaldır.
 on:
-  schedule:
-    - cron: '*/30 * * * *'
+  # schedule:
+  #   - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -29,4 +31,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
           git commit -m "chore: yeni anime bölümleri eklendi" || exit 0
+          git pull --rebase
           git push

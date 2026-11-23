@@ -11,6 +11,11 @@
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/index.m3u8",
         "subtitles": [
           {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/tr.vtt"
+          },
+          {
             "lang": "en",
             "label": "İngilizce",
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep1/en.vtt"
@@ -22,6 +27,11 @@
         "title": "1. Sezon 2. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep2/index.m3u8",
         "subtitles": [
+          {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep2/tr.vtt"
+          },
           {
             "lang": "en",
             "label": "İngilizce",
@@ -35,6 +45,11 @@
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep3/index.m3u8",
         "subtitles": [
           {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep3/tr.vtt"
+          },
+          {
             "lang": "en",
             "label": "İngilizce",
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep3/en.vtt"
@@ -46,6 +61,11 @@
         "title": "1. Sezon 4. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep4/index.m3u8",
         "subtitles": [
+          {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep4/tr.vtt"
+          },
           {
             "lang": "en",
             "label": "İngilizce",
@@ -59,6 +79,11 @@
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep5/index.m3u8",
         "subtitles": [
           {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep5/tr.vtt"
+          },
+          {
             "lang": "en",
             "label": "İngilizce",
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep5/en.vtt"
@@ -70,6 +95,11 @@
         "title": "1. Sezon 6. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep6/index.m3u8",
         "subtitles": [
+          {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep6/tr.vtt"
+          },
           {
             "lang": "en",
             "label": "İngilizce",
@@ -83,6 +113,11 @@
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep7/index.m3u8",
         "subtitles": [
           {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep7/tr.vtt"
+          },
+          {
             "lang": "en",
             "label": "İngilizce",
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep7/en.vtt"
@@ -94,6 +129,11 @@
         "title": "1. Sezon 8. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep8/index.m3u8",
         "subtitles": [
+          {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep8/tr.vtt"
+          },
           {
             "lang": "en",
             "label": "İngilizce",
@@ -107,6 +147,11 @@
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep9/index.m3u8",
         "subtitles": [
           {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep9/tr.vtt"
+          },
+          {
             "lang": "en",
             "label": "İngilizce",
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep9/en.vtt"
@@ -118,6 +163,11 @@
         "title": "1. Sezon 10. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep10/index.m3u8",
         "subtitles": [
+          {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep10/tr.vtt"
+          },
           {
             "lang": "en",
             "label": "İngilizce",
@@ -131,6 +181,11 @@
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep11/index.m3u8",
         "subtitles": [
           {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep11/tr.vtt"
+          },
+          {
             "lang": "en",
             "label": "İngilizce",
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep11/en.vtt"
@@ -142,6 +197,11 @@
         "title": "1. Sezon 12. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep12/index.m3u8",
         "subtitles": [
+          {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s1/ep12/tr.vtt"
+          },
           {
             "lang": "en",
             "label": "İngilizce",

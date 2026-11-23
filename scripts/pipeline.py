@@ -87,35 +87,34 @@ def upload_to_doodstream(mp4_path):
     return f"https://dood.li/e/{res['result'][0]['filecode']}"
 
 def update_database(parsed, embed_url):
+    """Sitenin kullandığı liste formatında (data/animes.json) bölüm ekler."""
     os.makedirs("data", exist_ok=True)
-    db = json.load(open(DB_PATH, "r", encoding="utf-8")) if os.path.exists(DB_PATH) else {}
-    title_key = parsed["title"]
-    if title_key not in db:
+    db = []
+    if os.path.exists(DB_PATH):
+        with open(DB_PATH, "r", encoding="utf-8") as f:
+            db = json.load(f)
+    if not isinstance(db, list):
+        raise ValueError("animes.json beklenmeyen formatta, üzerine yazılmadı!")
+    anime_id = re.sub(r"[^a-z0-9]+", "-", parsed["title"].lower()).strip("-")
+    anime = next((a for a in db if a["id"] == anime_id), None)
+    if not anime:
+        anime = {"id": anime_id, "title": parsed["title"], "category": "Anime", "poster": "", "episodes": []}
         try:
-            res = requests.post(ANILIST_URL, json={"query": ANILIST_QUERY, "variables": {"search": title_key}}, timeout=15).json()
+            res = requests.post(ANILIST_URL, json={"query": ANILIST_QUERY, "variables": {"search": parsed["title"]}}, timeout=15).json()
             media = res["data"]["Media"]
-            db[title_key] = {
-                "anilist_id": media["id"],
-                "romaji_title": media["title"]["romaji"],
-                "english_title": media["title"]["english"] or title_key,
-                "categories": media["genres"] or ["Genel"],
-                "year": media["seasonYear"] or 2026,
-                "status": media["status"],
-                "cover": media["coverImage"]["extraLarge"],
-                "description": (media["description"] or "")[:400],
-                "episodes": {},
-            }
+            anime["title"] = media["title"]["english"] or media["title"]["romaji"] or parsed["title"]
+            anime["category"] = ", ".join((media["genres"] or ["Anime"])[:2])
+            anime["poster"] = media["coverImage"]["extraLarge"] or ""
         except Exception:
-            db[title_key] = {
-                "anilist_id": None, "romaji_title": title_key, "english_title": title_key,
-                "categories": ["Genel"], "year": 2026, "status": "RELEASING",
-                "cover": "", "description": "", "episodes": {},
-            }
-    db[title_key]["episodes"][str(parsed["episode"])] = {
-        "episode": parsed["episode"], "quality": parsed["quality"], "embed_url": embed_url
-    }
+            pass
+        db.append(anime)
+    ep_id = f"s1-ep{parsed['episode']}"
+    anime["episodes"] = [e for e in anime["episodes"] if e["id"] != ep_id]
+    anime["episodes"].append({"id": ep_id, "title": f"{parsed['episode']}. Bölüm", "embed_url": embed_url, "subtitles": []})
+    anime["episodes"].sort(key=lambda e: int(re.sub(r"\D", "", e["id"].split("-ep")[-1]) or 0))
     with open(DB_PATH, "w", encoding="utf-8") as f:
         json.dump(db, f, ensure_ascii=False, indent=2)
+        f.write("\n")
 
 def process_entry(entry):
     parsed = parse_filename(entry.title)
@@ -144,6 +143,12 @@ def process_entry(entry):
     return True
 
 def main():
+    if not UPLOAD_API_KEY:
+        print("UPLOAD_API_KEY tanımlı değil, pipeline atlandı.")
+        return
+    if not WATCHLIST:
+        print("WATCHLIST boş, pipeline atlandı (tüm SubsPlease akışını indirmemek için).")
+        return
     processed = load_processed()
     feed = feedparser.parse(RSS_URL)
     count = 0
