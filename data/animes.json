@@ -351,6 +351,11 @@
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep9/index.m3u8",
         "subtitles": [
           {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep9/tr.vtt"
+          },
+          {
             "lang": "en",
             "label": "İngilizce",
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep9/en.vtt"
@@ -362,6 +367,11 @@
         "title": "2. Sezon 10. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep10/index.m3u8",
         "subtitles": [
+          {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep10/tr.vtt"
+          },
           {
             "lang": "en",
             "label": "İngilizce",
@@ -375,6 +385,11 @@
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep11/index.m3u8",
         "subtitles": [
           {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep11/tr.vtt"
+          },
+          {
             "lang": "en",
             "label": "İngilizce",
             "src": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep11/en.vtt"
@@ -386,6 +401,11 @@
         "title": "2. Sezon 12. Bölüm",
         "m3u8": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep12/index.m3u8",
         "subtitles": [
+          {
+            "lang": "tr",
+            "label": "Türkçe",
+            "src": "https://raw.githubusercontent.com/mesflit/opm/main/s2/ep12/tr.vtt"
+          },
           {
             "lang": "en",
             "label": "İngilizce",
