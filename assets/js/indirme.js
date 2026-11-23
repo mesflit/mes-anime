@@ -105,28 +105,59 @@ async function downloadSub(anime, ep, s) {
   } catch (e) { alert("Altyazı indirilemedi: " + (e.message || e)); }
 }
 
-// Açık bölümün indirme düğmelerini çizer
+// Açık bölümün indirme düğmesini çizer: tek "⬇ İndir" düğmesi, tıklayınca menü açılır.
+// İndirme sürerken düğmede yüzde ve alt çizgide ilerleme görünür, menüde "İptal" çıkar.
+let menuAcik = false;
+
 export function renderDl() {
-  const bar = $("dlBar");
+  const kutu = $("dlBar");
   const c = durum.current, dl = durum.dl;
-  if (!bar || !c) return;
+  if (!kutu || !c) return;
   const { anime } = c, ep = anime.episodes[c.index];
-  bar.innerHTML = "";
-  const btn = (text, fn) => {
-    const b = document.createElement("button");
-    b.className = "btn"; b.textContent = text; b.onclick = fn;
-    bar.appendChild(b); return b;
+  const buBolum = dl && dl.key === anime.id + "/" + ep.id;
+
+  kutu.innerHTML = "";
+  const dugme = document.createElement("button");
+  dugme.className = "btn dl-btn";
+  dugme.setAttribute("aria-haspopup", "true");
+  dugme.setAttribute("aria-expanded", String(menuAcik));
+  dugme.textContent = dl ? `⬇ %${dl.pct}` : "⬇ İndir ▾";
+  if (dl) dugme.title = `${dl.title} indiriliyor`;
+  dugme.insertAdjacentHTML("beforeend", dl ? `<span class="dl-prog" style="width:${dl.pct}%"></span>` : "");
+  dugme.onclick = e => {
+    e.stopPropagation(); menuAcik = !menuAcik; renderDl();
+    if (menuAcik) $("dlBar").querySelector(".dl-menu button:not(:disabled)")?.focus();
   };
-  if (dl && dl.key === anime.id + "/" + ep.id) {
-    btn("✕ İptal", () => durum.dl && durum.dl.ctrl.abort());
-    bar.insertAdjacentHTML("beforeend", `<div class="dl-prog" role="progressbar" aria-valuenow="${dl.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${dl.pct}%"></i></div><span class="dl-note" aria-live="polite">${esc(dl.text)}</span>`);
-  } else if (dl) {
-    btn("⬇ Bölümü indir", null).disabled = true;
-    bar.insertAdjacentHTML("beforeend", `<span class="dl-note">Başka bölüm iniyor (${esc(dl.title)}, %${dl.pct})</span>`);
-  } else {
-    const h = heightOf(ep);
-    btn(`⬇ Bölümü indir${h ? ` (${h}p)` : " (MP4)"}`, () => downloadEpisode(anime, ep));
-    (ep.variants || []).forEach(v => btn(`⬇ ${v.name} (küçük dosya)`, () => downloadEpisode(anime, ep, v.m3u8, ` (${v.name})`)));
+  kutu.appendChild(dugme);
+  if (!menuAcik) return;
+
+  const menu = document.createElement("div");
+  menu.className = "dl-menu";
+  menu.setAttribute("role", "menu");
+  const satir = (yazi, ek, fn, kapali) => {
+    const b = document.createElement("button");
+    b.setAttribute("role", "menuitem");
+    b.innerHTML = `<span>${esc(yazi)}</span>${ek ? `<small>${esc(ek)}</small>` : ""}`;
+    b.disabled = !!kapali;
+    b.onclick = e => { e.stopPropagation(); menuAcik = false; fn(); renderDl(); };
+    menu.appendChild(b);
+  };
+
+  if (dl) {
+    menu.insertAdjacentHTML("beforeend", `<div class="dl-note" aria-live="polite">${esc(buBolum ? dl.text : `Başka bölüm iniyor: ${dl.title} (%${dl.pct})`)}</div>`);
+    satir("✕ İndirmeyi iptal et", "", () => durum.dl && durum.dl.ctrl.abort());
+    menu.appendChild(document.createElement("hr"));
   }
-  (ep.subtitles || []).forEach(s => btn(`⬇ ${s.label || LANG_LABELS[s.lang] || s.lang} altyazı`, () => downloadSub(anime, ep, s)));
+  const h = heightOf(ep);
+  satir("Bölüm", h ? `${h}p · MP4` : "MP4", () => downloadEpisode(anime, ep), dl);
+  (ep.variants || []).forEach(v => satir("Bölüm (küçük dosya)", `${v.name} · MP4`, () => downloadEpisode(anime, ep, v.m3u8, ` (${v.name})`), dl));
+  if ((ep.subtitles || []).length) menu.appendChild(document.createElement("hr"));
+  (ep.subtitles || []).forEach(s => satir(`${s.label || LANG_LABELS[s.lang] || s.lang} altyazı`, "SRT", () => downloadSub(anime, ep, s)));
+  kutu.appendChild(menu);
 }
+
+// Menü dışına tıklayınca veya Esc'ye basınca kapat
+document.addEventListener("click", e => { if (menuAcik && !e.target.closest("#dlBar")) { menuAcik = false; renderDl(); } });
+document.addEventListener("keydown", e => { if (menuAcik && e.key === "Escape") { menuAcik = false; renderDl(); $("dlBar")?.querySelector("button")?.focus(); } });
+// Bölüm değişince menü kapalı başlasın
+window.addEventListener("hashchange", () => { menuAcik = false; });

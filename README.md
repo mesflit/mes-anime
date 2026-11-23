@@ -239,8 +239,9 @@ Her video deposunun kökünde durur. JSON biçimindedir, yollar depo köküne g�
 
 ## İndirme nasıl çalışır?
 
-İzleme sayfasında videonun altında **"⬇ Bölümü indir (MP4)"** ve her altyazı için
-**"⬇ ... altyazı"** düğmeleri var.
+İzleme sayfasında Önceki/Sonraki'nin yanında tek bir **"⬇ İndir"** düğmesi var. Tıklayınca menü açılır:
+bölüm (MP4), varsa 480p küçük dosya ve her altyazı (SRT). İndirme sürerken düğmede yüzde görünür,
+menüden iptal edilebilir. Menü dışarı tıklayınca veya Esc ile kapanır.
 
 - Bölüm, tarayıcıda parça parça indirilir (6 parça aynı anda), şifresi çözülür ve
   [mux.js](https://github.com/videojs/mux.js) ile tek bir **MP4** dosyasına çevrilir.

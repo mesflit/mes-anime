@@ -9,12 +9,31 @@
 .watch-bar h1 { font-size: 1.15rem; }
 .sub { font-size: .85rem; color: var(--muted); margin-top: 4px; }
 
-/* İndirme */
-.dl-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-.dl-bar .btn { font-size: .85rem; padding: 7px 12px; }
-.dl-prog { flex: 1 1 160px; min-width: 120px; height: 6px; background: #2a3142; border-radius: 999px; overflow: hidden; }
-.dl-prog > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
-.dl-note { font-size: .8rem; color: var(--muted); }
+/* İndirme: tek düğme + açılır menü */
+.dl { position: relative; }
+.dl-btn { position: relative; overflow: hidden; min-width: 92px; }
+.dl-btn .dl-prog { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); transition: width .3s; }
+.dl-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 270px; max-width: calc(100vw - 32px);
+  background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+}
+/* Telefonda menü düğmenin altında tüm satır genişliğinde açılsın (ekrandan taşmasın) */
+@media (max-width: 600px) {
+  .watch-bar .btns { position: relative; width: 100%; }
+  .dl { position: static; }
+  .dl-menu { left: 0; right: 0; min-width: 0; max-width: none; }
+}
+.dl-menu button {
+  display: flex; justify-content: space-between; gap: 12px; width: 100%; text-align: left;
+  background: transparent; border: 0; color: var(--text); padding: 9px 10px; border-radius: 6px; cursor: pointer; font-size: .9rem;
+}
+.dl-menu button:hover:not(:disabled), .dl-menu button:focus-visible { background: rgba(255,255,255,.06); outline: none; }
+.dl-menu button:disabled { opacity: .45; cursor: default; }
+.dl-menu span, .dl-menu small { white-space: nowrap; }
+.dl-menu small { color: var(--muted); }
+.dl-menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px 2px; }
+.dl-menu .dl-note { font-size: .8rem; color: var(--muted); padding: 6px 10px; }
 
 /* Bölüm listesi */
 .ep-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
